@@ -104,143 +104,94 @@ window.addEventListener('resize',()=>{
   canvas.height=innerHeight;
 });
 
-/* ================= BACKGROUND IMAGE ================= */
+/* BACKGROUND */
 const bgImg = new Image();
 bgImg.src = "bg.png";
-
 const bgImg2 = new Image();
 bgImg2.src = "goonerola.png";
 
-const bgObj = {
-  x: canvas.width/2,
-  y: canvas.height/2,
-  vx: (Math.random()*0.4+0.1)*(Math.random()<0.5?-1:1),
-  vy: (Math.random()*0.4+0.1)*(Math.random()<0.5?-1:1),
-  size: 39
-};
+const bgObj = { x: canvas.width/2, y: canvas.height/2, vx: (Math.random()*0.4+0.1)*(Math.random()<0.5?-1:1), vy: (Math.random()*0.4+0.1)*(Math.random()<0.5?-1:1), size: 39 };
+const bgObj2 = { x: Math.random()*canvas.width, y: Math.random()*canvas.height, vx: (Math.random()*0.5+0.2)*(Math.random()<0.5?-1:1), vy: (Math.random()*0.5+0.2)*(Math.random()<0.5?-1:1), size:36 };
 
-const bgObj2 = {
-  x: Math.random() * canvas.width,
-  y: Math.random() * canvas.height,
-  vx: (Math.random()*0.5+0.2)*(Math.random()<0.5?-1:1),
-  vy: (Math.random()*0.5+0.2)*(Math.random()<0.5?-1:1),
-  size: 36
-};
+/* PLAYER */
+let player = { x:canvas.width/2, y:canvas.height/2, r:18, angle:0, tokens:0, health:100, rainbow:false };
+let currentShapeSides = 3; // tracks player shape permanently
 
-/* ==================================================== */
-
-let player = {
-  x:canvas.width/2,
-  y:canvas.height/2,
-  r:18,
-  angle:0,
-  tokens:0,
-  health:100,
-  rainbow:false
-};
-
-let currentShapeSides = 3; // NEW: tracks player shape permanently
-
+/* GAME DATA */
 let bullets=[], enemies=[], particles=[];
 let keys={}, idleMode=false, idleInterval=null;
-let combo=0, lastHit=0, mass=0;
-let difficulty = 1;
-let hUses = 12;
+let combo=0, mass=0;
+let difficulty=1, hUses=12;
 
-/* ================= FIRE ================= */
+/* FIRE */
 function fireSingle(){
+  const spread = 0.2;
   if(player.rainbow){
-    const spread=0.2;
     for(let i=-1;i<=2;i++){
-      const a=player.angle+i*spread;
-      bullets.push({
-        x:player.x,
-        y:player.y,
-        vx:Math.cos(a)*5,
-        vy:Math.sin(a)*5,
-        rainbow:true
-      });
+      const a=player.angle + i*spread;
+      bullets.push({x:player.x, y:player.y, vx:Math.cos(a)*5, vy:Math.sin(a)*5, rainbow:true});
     }
   } else {
-    bullets.push({
-      x:player.x,
-      y:player.y,
-      vx:Math.cos(player.angle)*5,
-      vy:Math.sin(player.angle)*5,
-      rainbow:false
-    });
+    bullets.push({x:player.x, y:player.y, vx:Math.cos(player.angle)*5, vy:Math.sin(player.angle)*5, rainbow:false});
   }
 }
 
 function fireSpread(){
   const count=8;
   for(let i=0;i<count;i++){
-    const a=i*Math.PI*2/count+player.angle;
-    bullets.push({
-      x:player.x,
-      y:player.y,
-      vx:Math.cos(a)*6,
-      vy:Math.sin(a)*6,
-      rainbow:player.rainbow
-    });
+    const a=i*Math.PI*2/count + player.angle;
+    bullets.push({x:player.x, y:player.y, vx:Math.cos(a)*6, vy:Math.sin(a)*6, rainbow:player.rainbow});
   }
 }
 
-/* ================= EVOLUTION ================= */
+/* EVOLUTION */
 function evolve(){
   if(player.tokens<5) currentShapeSides=3;
   else if(player.tokens<10) currentShapeSides=4;
-  else if(player.tokens<20) currentShapeSides=5;
-  else if(player.tokens<30) currentShapeSides=6;
-  else if(player.tokens<40) currentShapeSides=7;
-  else if(player.tokens<50) currentShapeSides=8;
-  else if(player.tokens<60) currentShapeSides=9;
-  else if(player.tokens<70) currentShapeSides=10;
-  else if(player.tokens<80) currentShapeSides=2;   // Digon
-  else if(player.tokens<90) currentShapeSides=50;  // 4-sided star
-  else if(player.tokens<100) currentShapeSides=60; // 6-sided star
+  else if(player.tokens<15) currentShapeSides=5;
+  else if(player.tokens<20) currentShapeSides=6;
+  else if(player.tokens<25) currentShapeSides=7;
+  else if(player.tokens<30) currentShapeSides=8;
+  else if(player.tokens<35) currentShapeSides=9;
+  else if(player.tokens<40) currentShapeSides=10;
+  else if(player.tokens<45) currentShapeSides=2;   // Digon
+  else if(player.tokens<50) currentShapeSides=50;  // 4-sided star
+  else if(player.tokens<55) currentShapeSides=60;  // 6-sided star
+  else if(player.tokens<60) currentShapeSides=70;  // 7-sided star
+  else if(player.tokens<65) currentShapeSides=80;  // 5-point star
+  else if(player.tokens<70) currentShapeSides=90;  // 6-point star
+  else if(player.tokens<75) currentShapeSides=101; // Hexagram
+  else if(player.tokens<80) currentShapeSides=102; // Heptagram
+  else if(player.tokens<85) currentShapeSides=103; // Heart
+  else if(player.tokens<90) currentShapeSides=104; // Diamond
   else currentShapeSides=100; // Circle
 }
 
-/* ================= ENEMIES ================= */
+/* ENEMIES */
 function spawnEnemy(){
-  enemies.push({
-    x:Math.random()<0.5?-20:canvas.width+20,
-    y:Math.random()*canvas.height,
-    r:8,
-    hp:1,
-    gradient:"red"
-  });
+  enemies.push({x:Math.random()<0.5?-20:canvas.width+20, y:Math.random()*canvas.height, r:8, hp:1, gradient:"red"});
 }
 setInterval(spawnEnemy,1000);
-setInterval(()=>{ hUses = 12; }, 60000);
+setInterval(()=>{ hUses = 12; },60000);
 
-/* ================= EXPLOSION ================= */
+/* EXPLOSION */
 function createExplosion(x,y){
   for(let i=0;i<12;i++){
-    particles.push({
-      x,y,
-      r:Math.random()*4+2,
-      vx:(Math.random()-0.5)*4,
-      vy:(Math.random()-0.5)*4,
-      alpha:1
-    });
+    particles.push({x,y,r:Math.random()*4+2, vx:(Math.random()-0.5)*4, vy:(Math.random()-0.5)*4, alpha:1});
   }
 }
 
-/* ================= COMBO ================= */
+/* COMBO */
 function showCombo(n){
   const d=document.createElement('div');
   d.className='comboText';
   d.textContent='COMBO x'+n;
-  d.style.color=player.rainbow
-    ?`hsl(${Date.now()%360},100%,50%)`
-    :'#fff';
+  d.style.color=player.rainbow?`hsl(${Date.now()%360},100%,50%)`:'#fff';
   document.body.appendChild(d);
   setTimeout(()=>d.remove(),1000);
 }
 
-/* ================= SHAPE NAMES ================= */
+/* SHAPE NAMES */
 function getShapeName(sides){
   switch(sides){
     case 3: return "Triangle";
@@ -254,15 +205,20 @@ function getShapeName(sides){
     case 2: return "Digon";
     case 50: return "4-sided Star";
     case 60: return "6-sided Star";
+    case 70: return "7-sided Star";
+    case 80: return "5-point Star";
+    case 90: return "6-point Star";
+    case 101: return "Hexagram";
+    case 102: return "Heptagram";
+    case 103: return "Heart";
+    case 104: return "Diamond";
     case 100: return "Circle";
     default: return "Unknown";
   }
 }
 
-/* ================= UPDATE ================= */
+/* UPDATE */
 function update(){
-  const now=performance.now();
-
   if(!idleMode){
     if(keys.w) player.y-=3;
     if(keys.s) player.y+=3;
@@ -275,24 +231,14 @@ function update(){
 
   player.angle+=0.05;
 
-  bullets.forEach(b=>{
-    b.x+=b.vx;
-    b.y+=b.vy;
-  });
+  bullets.forEach(b=>{b.x+=b.vx; b.y+=b.vy;});
 
   enemies.forEach(e=>{
     const dx=player.x-e.x, dy=player.y-e.y;
     const d=Math.hypot(dx,dy)||1;
-    const speed = 0.5 + difficulty * 0.15;
-    e.x += dx/d * speed;
-    e.y += dy/d * speed;
-
-    // PLAYER TOUCHES the ENEMY
-    if(d < player.r + e.r){
-      combo = 0;
-      player.rainbow = false;
-      // Shape no longer reverts
-    }
+    const speed = 0.5 + difficulty*0.15;
+    e.x += dx/d*speed; e.y += dy/d*speed;
+    if(d<player.r+e.r){ combo=0; player.rainbow=false; }
   });
 
   bullets.forEach((b,bi)=>{
@@ -301,36 +247,24 @@ function update(){
         bullets.splice(bi,1);
         enemies.splice(ei,1);
         createExplosion(e.x,e.y);
-        mass++; 
-        player.tokens++; 
-        evolve();
+        mass++; player.tokens++; evolve();
         combo++;
-
-        // EVERY 25 KILLS = HARDER GAME
-        if(mass % 25 === 0) difficulty++;
-
+        if(mass%25===0) difficulty++;
         if(combo>1) showCombo(combo);
-        if(combo >= 35 && !player.rainbow) player.rainbow = true;
+        if(combo>=35 && !player.rainbow) player.rainbow=true;
       }
     });
   });
 
-  particles.forEach(p=>{
-    p.x+=p.vx;
-    p.y+=p.vy;
-    p.alpha-=0.03;
-  });
+  particles.forEach(p=>{p.x+=p.vx; p.y+=p.vy; p.alpha-=0.03;});
   particles=particles.filter(p=>p.alpha>0);
 
-  /* BACKGROUND IMAGE MOVEMENT */
-  bgObj.x+=bgObj.vx;
-  bgObj.y+=bgObj.vy;
+  /* BACKGROUND */
+  bgObj.x+=bgObj.vx; bgObj.y+=bgObj.vy;
   if(bgObj.x<bgObj.size||bgObj.x>canvas.width-bgObj.size) bgObj.vx*=-1;
   if(bgObj.y<bgObj.size||bgObj.y>canvas.height-bgObj.size) bgObj.vy*=-1;
 
-  /* SECOND BACKGROUND IMAGE MOVEMENT */
-  bgObj2.x+=bgObj2.vx;
-  bgObj2.y+=bgObj2.vy;
+  bgObj2.x+=bgObj2.vx; bgObj2.y+=bgObj2.vy;
   if(bgObj2.x<bgObj2.size||bgObj2.x>canvas.width-bgObj2.size) bgObj2.vx*=-1;
   if(bgObj2.y<bgObj2.size||bgObj2.y>canvas.height-bgObj2.size) bgObj2.vy*=-1;
 
@@ -338,138 +272,67 @@ function update(){
   document.getElementById('tokens').textContent=player.tokens;
   document.getElementById('tier').textContent=getShapeName(currentShapeSides);
 
-  // KEEP PLAYER ON SCREEN
-  player.x = Math.max(player.r, Math.min(canvas.width - player.r, player.x));
-  player.y = Math.max(player.r, Math.min(canvas.height - player.r, player.y));
+  player.x=Math.max(player.r,Math.min(canvas.width-player.r,player.x));
+  player.y=Math.max(player.r,Math.min(canvas.height-player.r,player.y));
 }
 
-/* ================= DRAW ================= */
+/* DRAW */
 function draw(){
   ctx.fillStyle="rgba(11,11,11,0.25)";
   ctx.fillRect(0,0,canvas.width,canvas.height);
 
-  /* BACKGROUND IMAGE */
-  if(bgImg.complete){
-    ctx.globalAlpha=0.25;
-    ctx.drawImage(bgImg, bgObj.x-bgObj.size/2, bgObj.y-bgObj.size/2, bgObj.size, bgObj.size);
-    ctx.globalAlpha=1;
-  }
+  if(bgImg.complete){ ctx.globalAlpha=0.25; ctx.drawImage(bgImg,bgObj.x-bgObj.size/2,bgObj.y-bgObj.size/2,bgObj.size,bgObj.size); ctx.globalAlpha=1; }
+  if(bgImg2.complete){ ctx.globalAlpha=0.25; ctx.drawImage(bgImg2,bgObj2.x-bgObj2.size/2,bgObj2.y-bgObj2.size/2,bgObj2.size,bgObj2.size); ctx.globalAlpha=1; }
 
-  /* SECOND BACKGROUND IMAGE */
-  if(bgImg2.complete){
-    ctx.globalAlpha = 0.25;
-    ctx.drawImage(bgImg2, bgObj2.x-bgObj2.size/2, bgObj2.y-bgObj2.size/2, bgObj2.size, bgObj2.size);
-    ctx.globalAlpha = 1;
-  }
-
-  /* DRAW PLAYER */
   drawPlayerShape();
 
-  /* BULLETS */
-  bullets.forEach(b=>{
-    ctx.fillStyle=b.rainbow
-      ?`hsl(${Date.now()%360},100%,50%)`
-      :'#fff';
-    ctx.fillRect(b.x,b.y,3,3);
-  });
-
-  /* ENEMIES */
-  enemies.forEach(e=>{
-    ctx.fillStyle='red';
-    ctx.beginPath();
-    ctx.arc(e.x,e.y,e.r,0,Math.PI*2);
-    ctx.fill();
-  });
-
-  /* PARTICLES */
-  particles.forEach(p=>{
-    ctx.fillStyle=`rgba(255,0,0,${p.alpha})`;
-    ctx.beginPath();
-    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-    ctx.fill();
-  });
+  bullets.forEach(b=>{ ctx.fillStyle=b.rainbow?`hsl(${Date.now()%360},100%,50%)`:'#fff'; ctx.fillRect(b.x,b.y,3,3); });
+  enemies.forEach(e=>{ ctx.fillStyle='red'; ctx.beginPath(); ctx.arc(e.x,e.y,e.r,0,Math.PI*2); ctx.fill(); });
+  particles.forEach(p=>{ ctx.fillStyle=`rgba(255,0,0,${p.alpha})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill(); });
 }
 
-/* ================= DRAW PLAYER SHAPE ================= */
+/* DRAW PLAYER */
 function drawPlayerShape(){
-  const sides = currentShapeSides;
-  ctx.save();
-  ctx.translate(player.x,player.y);
-  ctx.rotate(player.angle);
-
-  ctx.fillStyle = player.rainbow
-    ? `hsl(${Date.now()%360},100%,50%)`
-    : '#4caf50';
-
+  const s = currentShapeSides;
+  ctx.save(); ctx.translate(player.x,player.y); ctx.rotate(player.angle);
+  ctx.fillStyle = player.rainbow ? `hsl(${Date.now()%360},100%,50%)`:'#4caf50';
   ctx.beginPath();
 
-  if([3,4,5,6,7,8,9,10].includes(sides)){
-    for(let i=0;i<sides;i++){
-      const a=i*Math.PI*2/sides - Math.PI/2;
-      ctx.lineTo(Math.cos(a)*player.r, Math.sin(a)*player.r);
-    }
+  if([3,4,5,6,7,8,9,10].includes(s)){
+    for(let i=0;i<s;i++){ const a=i*Math.PI*2/s - Math.PI/2; ctx.lineTo(Math.cos(a)*player.r,Math.sin(a)*player.r); }
     ctx.closePath();
-  } else if(sides===100){
-    ctx.arc(0,0,player.r,0,Math.PI*2);
-  } else if(sides===2){
-    ctx.moveTo(-player.r,0);
-    ctx.quadraticCurveTo(0,-player.r, player.r,0);
-    ctx.quadraticCurveTo(0,player.r, -player.r,0);
+  } else if(s===100){ ctx.arc(0,0,player.r,0,Math.PI*2);
+  } else if(s===2){ ctx.moveTo(-player.r,0); ctx.quadraticCurveTo(0,-player.r,player.r,0); ctx.quadraticCurveTo(0,player.r,-player.r,0); ctx.closePath();
+  } else if([50,60,70,80,90,101,102].includes(s)){
+    let spikes;
+    switch(s){ case 50:spikes=4;break; case 60:spikes=6;break; case 70:spikes=7;break; case 80:spikes=5;break; case 90:spikes=6;break; case 101:spikes=6;break; case 102:spikes=7;break;}
+    for(let i=0;i<spikes*2;i++){ let r=i%2===0?player.r:player.r/2; if(s===101||s===102) r=i%2===0?player.r:player.r/3; const a=i*Math.PI/spikes - Math.PI/2; ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);}
     ctx.closePath();
-  } else if(sides===50){
-    const spikes = 4;
-    for(let i=0;i<spikes*2;i++){
-      const r = i%2===0 ? player.r : player.r/2;
-      const a = i*Math.PI/spikes - Math.PI/2;
-      ctx.lineTo(Math.cos(a)*r, Math.sin(a)*r);
-    }
-    ctx.closePath();
-  } else if(sides===60){
-    const spikes = 6;
-    for(let i=0;i<spikes*2;i++){
-      const r = i%2===0 ? player.r : player.r/2;
-      const a = i*Math.PI/spikes - Math.PI/2;
-      ctx.lineTo(Math.cos(a)*r, Math.sin(a)*r);
-    }
-    ctx.closePath();
-  }
-
-  ctx.fill();
-  ctx.restore();
+  } else if(s===103){ // Heart
+    ctx.moveTo(0,-player.r/2); ctx.bezierCurveTo(player.r, -player.r*1.2, player.r*1.5, player.r/3, 0, player.r); ctx.bezierCurveTo(-player.r*1.5, player.r/3, -player.r, -player.r*1.2, 0, -player.r/2); ctx.closePath();
+  } else if(s===104){ // Diamond
+    ctx.moveTo(0,-player.r); ctx.lineTo(player.r/2,0); ctx.lineTo(0,player.r); ctx.lineTo(-player.r/2,0); ctx.closePath();
+  } else { ctx.arc(0,0,player.r,0,Math.PI*2);}
+  ctx.fill(); ctx.restore();
 }
 
-/* ================= LOOP ================= */
+/* LOOP */
 function loop(){ update(); draw(); requestAnimationFrame(loop); }
 loop();
 
-/* ================= INPUT ================= */
-window.addEventListener('keydown',e=>{
-  keys[e.key.toLowerCase()]=true;
-  if(e.key===' '&&!idleMode) fireSingle();
-  if(e.key.toLowerCase()==='h' && !idleMode && hUses>0){
-    fireSpread();
-    hUses--;
-  }
-});
-window.addEventListener('keyup',e=>{
-  keys[e.key.toLowerCase()]=false;
-});
+/* INPUT */
+window.addEventListener('keydown',e=>{ keys[e.key.toLowerCase()]=true; if(e.key===' '&&!idleMode) fireSingle(); if(e.key.toLowerCase()==='h'&&!idleMode&&hUses>0){ fireSpread(); hUses--; } });
+window.addEventListener('keyup',e=>{ keys[e.key.toLowerCase()]=false; });
 
-/* ================= IDLE MODE ================= */
+/* IDLE MODE */
 document.getElementById('idleBtn').onclick=()=>{
   if(idleMode) return;
-  idleMode=true;
-  document.getElementById('idleBtn').style.display='none';
+  idleMode=true; document.getElementById('idleBtn').style.display='none';
   document.getElementById('exitIdleBtn').style.display='block';
-  idleInterval=setInterval(()=>{
-    for(let i=0;i<currentShapeSides;i++) fireSingle();
-    if(combo>=10) fireSpread();
-  },1000);
+  idleInterval=setInterval(()=>{ for(let i=0;i<currentShapeSides;i++) fireSingle(); if(combo>=10) fireSpread(); },1000);
 };
 document.getElementById('exitIdleBtn').onclick=()=>{
-  idleMode=false;
-  clearInterval(idleInterval);
-  idleInterval=null;
+  idleMode=false; clearInterval(idleInterval); idleInterval=null;
   document.getElementById('exitIdleBtn').style.display='none';
   document.getElementById('idleBtn').style.display='block';
 };

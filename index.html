@@ -35,7 +35,6 @@ button:hover{opacity:0.85;}
 
 <canvas id="game"></canvas>
 
-<!-- SAVE / LOAD PANEL -->
 <div id="savePanel" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999;">
   <div style="width:420px;background:#111;border:2px solid #555;padding:14px;margin:10% auto;border-radius:10px;">
     <b>Save / Load Game</b>
@@ -63,7 +62,7 @@ let player={x:canvas.width/2,y:canvas.height/2,r:18,angle:0,tokens:0,health:100,
 let currentShapeSides=3;
 
 /* GAME DATA */
-let bullets=[],enemies=[],particles=[],bosses=[];
+let bullets=[],enemies=[],particles=[];
 let keys={},idleMode=false,idleInterval=null;
 let combo=0,mass=0,difficulty=1,hUses=12;
 
@@ -79,9 +78,7 @@ function fireSingle(){
       const a=player.angle+i*spread;
       bullets.push({x:player.x,y:player.y,vx:Math.cos(a)*6,vy:Math.sin(a)*6,rainbow:true});
     }
-  } else {
-    bullets.push({x:player.x,y:player.y,vx:Math.cos(player.angle)*6,vy:Math.sin(player.angle)*6,rainbow:false});
-  }
+  } else bullets.push({x:player.x,y:player.y,vx:Math.cos(player.angle)*6,vy:Math.sin(player.angle)*6,rainbow:false});
 }
 function fireSpread(){
   const count=8;
@@ -120,14 +117,10 @@ function spawnEnemy(){ enemies.push({x:Math.random()<0.5?-20:canvas.width+20, y:
 setInterval(spawnEnemy,800);
 setInterval(()=>{hUses=12;},60000);
 
-/* BOSSES */
-function spawnBoss(){
-  bosses.push({x:Math.random()<0.5?-50:canvas.width+50, y:Math.random()*canvas.height, r:player.r*1.2, hp:30});
-}
-setInterval(spawnBoss,75000);
-
 /* EXPLOSION */
-function createExplosion(x,y){ for(let i=0;i<12;i++){ particles.push({x,y,r:Math.random()*4+2,vx:(Math.random()-0.5)*5,vy:(Math.random()-0.5)*5,alpha:1}); } }
+function createExplosion(x,y){ 
+  for(let i=0;i<12;i++){ particles.push({x,y,r:Math.random()*4+2,vx:(Math.random()-0.5)*5,vy:(Math.random()-0.5)*5,alpha:1}); } 
+}
 
 /* COMBO */
 function showCombo(n){
@@ -159,29 +152,54 @@ function update(){
   player.angle+=0.08;
 
   // bullets
-  bullets.forEach((b,bi)=>{ b.x+=b.vx; b.y+=b.vy; if(b.x<0||b.x>canvas.width||b.y<0||b.y>canvas.height) bullets.splice(bi,1); });
+  for(let bi=bullets.length-1;bi>=0;bi--){
+    let b=bullets[bi]; b.x+=b.vx; b.y+=b.vy;
+    if(b.x<0||b.x>canvas.width||b.y<0||b.y>canvas.height) bullets.splice(bi,1);
+  }
 
   // enemies
-  enemies.forEach((e,ei)=>{
+  for(let ei=enemies.length-1;ei>=0;ei--){
+    let e=enemies[ei];
     const dx=player.x-e.x, dy=player.y-e.y, d=Math.hypot(dx,dy)||1;
     const speed=0.7+difficulty*0.2;
     e.x+=dx/d*speed; e.y+=dy/d*speed;
-    if(d<player.r+e.r){ const idx=shapeOrder.indexOf(currentShapeSides); currentShapeSides=shapeOrder[Math.max(0,idx-3)]; combo=0; player.rainbow=false; shakeCamera(5); enemies.splice(ei,1);}
+
+    if(d<player.r+e.r){ 
+      const idx=shapeOrder.indexOf(currentShapeSides); 
+      currentShapeSides=shapeOrder[Math.max(0,idx-3)]; 
+      combo=0; 
+      player.rainbow=false; 
+      shakeCamera(5); 
+      enemies.splice(ei,1);
+    }
     if(e.x<-50||e.x>canvas.width+50||e.y<-50||e.y>canvas.height+50) enemies.splice(ei,1);
-  });
+  }
 
   // bullets hit enemies
-  bullets.forEach((b,bi)=>{ enemies.forEach((e,ei)=>{ if(Math.hypot(b.x-e.x,b.y-e.y)<e.r){ bullets.splice(bi,1); enemies.splice(ei,1); createExplosion(e.x,e.y); mass++; player.tokens++; evolve(); combo++; if(mass%20===0)difficulty++; if(combo>1)showCombo(combo); if(combo>=35&&!player.rainbow)player.rainbow=true; } }); });
-
-  // bosses
-  bosses.forEach((b,bi)=>{
-    const dx=player.x-b.x, dy=player.y-b.y, d=Math.hypot(dx,dy)||1;
-    b.x+=dx/d*(0.4+difficulty*0.1); b.y+=dy/d*(0.4+difficulty*0.1);
-    if(d<player.r+b.r){ shakeCamera(10); } // collision effect
-  });
+  for(let bi=bullets.length-1;bi>=0;bi--){
+    let b=bullets[bi];
+    for(let ei=enemies.length-1;ei>=0;ei--){
+      let e=enemies[ei];
+      if(Math.hypot(b.x-e.x,b.y-e.y)<e.r){
+        bullets.splice(bi,1);
+        enemies.splice(ei,1);
+        createExplosion(e.x,e.y);
+        mass++; player.tokens++; evolve(); combo++;
+        shakeCamera(8); // shake on enemy kill
+        if(mass%20===0) difficulty++;
+        if(combo>1) showCombo(combo);
+        if(combo>=35&&!player.rainbow) player.rainbow=true;
+        break;
+      }
+    }
+  }
 
   // particles
-  particles.forEach((p,pi)=>{ p.x+=p.vx; p.y+=p.vy; p.alpha-=0.03; if(p.alpha<=0) particles.splice(pi,1); });
+  for(let pi=particles.length-1;pi>=0;pi--){
+    let p=particles[pi];
+    p.x+=p.vx; p.y+=p.vy; p.alpha-=0.03;
+    if(p.alpha<=0) particles.splice(pi,1);
+  }
 
   // background
   bgObj.x+=bgObj.vx; bgObj.y+=bgObj.vy; if(bgObj.x<bgObj.size||bgObj.x>canvas.width-bgObj.size) bgObj.vx*=-1; if(bgObj.y<bgObj.size||bgObj.y>canvas.height-bgObj.size) bgObj.vy*=-1;
@@ -212,12 +230,6 @@ function draw(){
 
   bullets.forEach(b=>{ctx.fillStyle=b.rainbow?`hsl(${Date.now()%360},100%,50%)`:'#fff'; ctx.fillRect(b.x,b.y,3,3);});
   enemies.forEach(e=>{ctx.fillStyle='red';ctx.beginPath();ctx.arc(e.x,e.y,e.r,0,Math.PI*2);ctx.fill();});
-  bosses.forEach(b=>{ 
-    ctx.fillStyle='black'; ctx.strokeStyle='hsl(280,100%,80%)'; ctx.lineWidth=3; ctx.shadowColor='hsl(280,100%,70%)'; ctx.shadowBlur=6;
-    ctx.beginPath(); const sides=6; for(let i=0;i<sides;i++){const a=i*Math.PI*2/sides-Math.PI/2; ctx.lineTo(Math.cos(a)*b.r, Math.sin(a)*b.r);}
-    ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.shadowBlur=0;
-    ctx.fillStyle='#fff'; ctx.font='14px monospace'; ctx.textAlign='center'; ctx.fillText(b.hp,b.x,b.y-b.r-5);
-  });
   particles.forEach(p=>{ctx.fillStyle=`rgba(255,0,0,${p.alpha})`;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();});
   ctx.restore();
 }
@@ -240,7 +252,8 @@ function drawPlayerShape(){
 }
 
 /* LOOP */
-function loop(){update();draw();requestAnimationFrame(loop);}
+let gamePaused=false;
+function loop(){ if(!gamePaused){ update(); draw(); requestAnimationFrame(loop); } }
 loop();
 
 /* INPUT */
@@ -251,21 +264,37 @@ window.addEventListener('keyup',e=>{ keys[e.key.toLowerCase()]=false; });
 document.getElementById('idleBtn').onclick=()=>{ if(idleMode) return; idleMode=true; document.getElementById('idleBtn').style.display='none'; document.getElementById('exitIdleBtn').style.display='block'; idleInterval=setInterval(()=>{ for(let i=0;i<currentShapeSides;i++) fireSingle(); if(combo>=10) fireSpread(); },1000); };
 document.getElementById('exitIdleBtn').onclick=()=>{ idleMode=false; clearInterval(idleInterval); idleInterval=null; document.getElementById('exitIdleBtn').style.display='none'; document.getElementById('idleBtn').style.display='block'; };
 
-/* SAVE / LOAD TEXT SYSTEM */
+/* SAVE / LOAD SYSTEM */
 const savePanel = document.getElementById("savePanel");
 const saveText  = document.getElementById("saveText");
-document.getElementById("saveLoadBtn").onclick = () => { savePanel.style.display = "block"; saveText.value = ""; };
-document.getElementById("closeSave").onclick = () => { savePanel.style.display = "none"; };
+document.getElementById("saveLoadBtn").onclick = () => { savePanel.style.display = "block"; saveText.value = ""; gamePaused=true; };
+document.getElementById("closeSave").onclick = () => { savePanel.style.display = "none"; gamePaused=false; };
 document.getElementById("saveBtn").onclick = () => {
-  const data={mass,tokens,combo,currentShapeSides,playerRainbow:player.rainbow};
+  const data={
+    mass,
+    tokens:player.tokens,
+    combo,
+    currentShapeSides,
+    playerRainbow:player.rainbow,
+    playerX:player.x,
+    playerY:player.y,
+    enemies:enemies.map(e=>({x:e.x,y:e.y,r:e.r,hp:e.hp}))
+  };
   saveText.value=btoa(JSON.stringify(data));
 };
 document.getElementById("loadBtn").onclick = () => {
   try{
     const data=JSON.parse(atob(saveText.value.trim()));
-    mass=data.mass ?? mass; tokens=data.tokens ?? tokens; combo=data.combo ?? 0; currentShapeSides=data.currentShapeSides ?? currentShapeSides;
+    mass=data.mass ?? mass;
+    player.tokens=data.tokens ?? player.tokens;
+    combo=data.combo ?? combo;
+    currentShapeSides=data.currentShapeSides ?? currentShapeSides;
     player.rainbow=!!data.playerRainbow;
+    player.x=data.playerX ?? player.x;
+    player.y=data.playerY ?? player.y;
+    enemies=data.enemies ?? [];
     savePanel.style.display="none";
+    gamePaused=false;
   }catch{ alert("Invalid save code"); }
 };
 </script>

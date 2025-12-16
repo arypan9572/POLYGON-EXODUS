@@ -244,12 +244,19 @@ function update(){
     b.y+=b.vy;
   });
 
-  enemies.forEach(e=>{
-    const dx=player.x-e.x, dy=player.y-e.y;
-    const d=Math.hypot(dx,dy)||1;
-    e.x+=dx/d*0.5;
-    e.y+=dy/d*0.5;
-  });
+ enemies.forEach(e=>{
+  const dx=player.x-e.x, dy=player.y-e.y;
+  const d=Math.hypot(dx,dy)||1;
+  e.x+=dx/d*0.5;
+  e.y+=dy/d*0.5;
+
+  // PLAYER TOUCHES the ENEMY
+  if(d < player.r + e.r){
+    combo = 0;
+    player.rainbow = false;
+  }
+});
+
 
   bullets.forEach((b,bi)=>{
     enemies.forEach((e,ei)=>{
@@ -260,10 +267,10 @@ function update(){
         mass++; player.tokens++; evolve();
         combo++;
         if(combo>1) showCombo(combo);
-        if(combo>=10){
-          player.rainbow=true;
-          setTimeout(()=>player.rainbow=false,60000);
-        }
+       if(combo >= 35 && !player.rainbow){
+  player.rainbow = true;
+}
+
       }
     });
   });

@@ -253,7 +253,7 @@ function drawPlayerShape(){
 
 /* LOOP */
 let gamePaused=false;
-function loop(){ if(!gamePaused){ update(); draw(); requestAnimationFrame(loop); } }
+function loop(){ requestAnimationFrame(loop); if(!gamePaused){ update(); draw(); } }
 loop();
 
 /* INPUT */

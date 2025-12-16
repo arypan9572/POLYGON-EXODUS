@@ -127,8 +127,7 @@ const bgObj2 = {
   size: 36
 };
 
-/* ==================================================== */
-
+/* ================= PLAYER ================= */
 let player = {
   x:canvas.width/2,
   y:canvas.height/2,
@@ -139,13 +138,14 @@ let player = {
   rainbow:false
 };
 
-let currentShapeSides = 3; // NEW: tracks player shape permanently
+let currentShapeSides = 3; // tracks player shape permanently
 
-let bullets=[], enemies=[], particles=[];
+let bullets=[], enemies=[], particles=[], bosses=[];
 let keys={}, idleMode=false, idleInterval=null;
-let combo=0, lastHit=0, mass=0;
+let combo=0, mass=0;
 let difficulty = 1;
 let hUses = 12;
+let bossIndex = 0; // track boss progression
 
 /* ================= FIRE ================= */
 function fireSingle(){
@@ -215,6 +215,24 @@ function spawnEnemy(){
 setInterval(spawnEnemy,1000);
 setInterval(()=>{ hUses = 12; }, 60000);
 
+/* ================= BOSSES ================= */
+function spawnBoss() {
+  const baseSize = player.r * 1.5 * Math.pow(1.17, bossIndex); 
+  const hp = 30 + bossIndex * 2; 
+  bosses.push({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    r: baseSize,
+    hp: hp,
+    maxHp: hp,
+    flash: 0
+  });
+  bossIndex++;
+}
+
+// every 2.5 minutes
+setInterval(spawnBoss, 150000);
+
 /* ================= EXPLOSION ================= */
 function createExplosion(x,y){
   for(let i=0;i<12;i++){
@@ -261,8 +279,6 @@ function getShapeName(sides){
 
 /* ================= UPDATE ================= */
 function update(){
-  const now=performance.now();
-
   if(!idleMode){
     if(keys.w) player.y-=3;
     if(keys.s) player.y+=3;
@@ -287,11 +303,9 @@ function update(){
     e.x += dx/d * speed;
     e.y += dy/d * speed;
 
-    // PLAYER TOUCHES the ENEMY
     if(d < player.r + e.r){
       combo = 0;
       player.rainbow = false;
-      // Shape no longer reverts
     }
   });
 
@@ -305,11 +319,23 @@ function update(){
         player.tokens++; 
         evolve();
         combo++;
-
-        // EVERY 25 KILLS = HARDER GAME
         if(mass % 25 === 0) difficulty++;
-
         if(combo>1) showCombo(combo);
+        if(combo >= 35 && !player.rainbow) player.rainbow = true;
+      }
+    });
+  });
+
+  // BULLETS HIT BOSSES
+  bullets.forEach((b,bi)=>{
+    bosses.forEach((boss,bi2)=>{
+      if(Math.hypot(b.x-boss.x, b.y-boss.y)<boss.r){
+        bullets.splice(bi,1);
+        boss.hp--;
+        createExplosion(boss.x,boss.y);
+        if(boss.hp<=0) bosses.splice(bi2,1);
+        mass++; player.tokens++; evolve();
+        combo++; if(combo>1) showCombo(combo);
         if(combo >= 35 && !player.rainbow) player.rainbow = true;
       }
     });
@@ -322,13 +348,11 @@ function update(){
   });
   particles=particles.filter(p=>p.alpha>0);
 
-  /* BACKGROUND IMAGE MOVEMENT */
   bgObj.x+=bgObj.vx;
   bgObj.y+=bgObj.vy;
   if(bgObj.x<bgObj.size||bgObj.x>canvas.width-bgObj.size) bgObj.vx*=-1;
   if(bgObj.y<bgObj.size||bgObj.y>canvas.height-bgObj.size) bgObj.vy*=-1;
 
-  /* SECOND BACKGROUND IMAGE MOVEMENT */
   bgObj2.x+=bgObj2.vx;
   bgObj2.y+=bgObj2.vy;
   if(bgObj2.x<bgObj2.size||bgObj2.x>canvas.width-bgObj2.size) bgObj2.vx*=-1;
@@ -338,7 +362,6 @@ function update(){
   document.getElementById('tokens').textContent=player.tokens;
   document.getElementById('tier').textContent=getShapeName(currentShapeSides);
 
-  // KEEP PLAYER ON SCREEN
   player.x = Math.max(player.r, Math.min(canvas.width - player.r, player.x));
   player.y = Math.max(player.r, Math.min(canvas.height - player.r, player.y));
 }
@@ -348,24 +371,19 @@ function draw(){
   ctx.fillStyle="rgba(11,11,11,0.25)";
   ctx.fillRect(0,0,canvas.width,canvas.height);
 
-  /* BACKGROUND IMAGE */
   if(bgImg.complete){
     ctx.globalAlpha=0.25;
     ctx.drawImage(bgImg, bgObj.x-bgObj.size/2, bgObj.y-bgObj.size/2, bgObj.size, bgObj.size);
     ctx.globalAlpha=1;
   }
-
-  /* SECOND BACKGROUND IMAGE */
   if(bgImg2.complete){
     ctx.globalAlpha = 0.25;
     ctx.drawImage(bgImg2, bgObj2.x-bgObj2.size/2, bgObj2.y-bgObj2.size/2, bgObj2.size, bgObj2.size);
     ctx.globalAlpha = 1;
   }
 
-  /* DRAW PLAYER */
   drawPlayerShape();
 
-  /* BULLETS */
   bullets.forEach(b=>{
     ctx.fillStyle=b.rainbow
       ?`hsl(${Date.now()%360},100%,50%)`
@@ -373,7 +391,6 @@ function draw(){
     ctx.fillRect(b.x,b.y,3,3);
   });
 
-  /* ENEMIES */
   enemies.forEach(e=>{
     ctx.fillStyle='red';
     ctx.beginPath();
@@ -381,7 +398,23 @@ function draw(){
     ctx.fill();
   });
 
-  /* PARTICLES */
+  // DRAW BOSSES
+  bosses.forEach(b=>{
+    const color = b.flash % 2 < 1 ? 'purple' : 'white';
+    ctx.fillStyle = color;
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+    ctx.fill();
+    ctx.stroke();
+
+    // HP bar
+    ctx.fillStyle='red';
+    ctx.fillRect(b.x - b.r, b.y - b.r - 10, (b.hp / b.maxHp) * b.r * 2, 5);
+    b.flash += 0.1;
+  });
+
   particles.forEach(p=>{
     ctx.fillStyle=`rgba(255,0,0,${p.alpha})`;
     ctx.beginPath();

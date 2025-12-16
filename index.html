@@ -4,15 +4,32 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>POLYGON EXODUS</title>
+
 <style>
-html, body { margin:0; padding:0; background:#0b0b0b; color:#fff; font-family:'SF Pro', sans-serif; overflow:hidden; }
+html, body {
+  margin:0;
+  padding:0;
+  background:#0b0b0b;
+  color:#fff;
+  font-family:'SF Pro', sans-serif;
+  overflow:hidden;
+}
 canvas { display:block; }
-#ui { position: fixed; top:10px; right:10px; background: rgba(0,0,0,0.7); padding:12px; border-radius:10px; width:260px; font-size:14px; }
-button { width:100%; padding:6px; margin:4px 0; border-radius:6px; border:none; cursor:pointer; font-weight:bold; }
+
+#ui {
+  position: fixed;
+  top:10px;
+  right:10px;
+  background: rgba(0,0,0,0.7);
+  padding:12px;
+  border-radius:10px;
+  width:260px;
+  font-size:14px;
+}
 </style>
 </head>
-<body>
 
+<body>
 <div id="ui">
   <div><b>Player</b></div>
   <hr>
@@ -24,39 +41,68 @@ button { width:100%; padding:6px; margin:4px 0; border-radius:6px; border:none; 
 <canvas id="game"></canvas>
 
 <script>
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 canvas.width = innerWidth;
 canvas.height = innerHeight;
+addEventListener("resize",()=>{canvas.width=innerWidth;canvas.height=innerHeight});
 
 /* PLAYER */
-let player={x:canvas.width/2,y:canvas.height/2,r:18,angle:0,tokens:0,health:100,rainbow:false};
-let currentShapeSides=3;
+let player = {
+  x: canvas.width/2,
+  y: canvas.height/2,
+  r: 18,
+  angle: 0,
+  tokens: 0
+};
+let currentShapeSides = 3;
 
 /* GAME DATA */
-let bullets=[],enemies=[],particles=[];
-let keys={},idleMode=false;
-let combo=0,mass=0,difficulty=1;
+let bullets = [];
+let enemies = [];
+let bigEnemies = [];
+let particles = [];
+let keys = {};
+let mass = 0;
 
-/* ===== BIG ENEMY (ADDED) ===== */
-let bigEnemies=[];
+/* INPUT */
+addEventListener("keydown",e=>keys[e.key.toLowerCase()]=true);
+addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
 
-function spawnBigEnemy(){
-  bigEnemies.push({
-    x: Math.random()<0.5 ? -40 : canvas.width+40,
-    y: Math.random()*canvas.height,
-    r: player.r,
-    hp: 30
+/* SHOOT */
+canvas.addEventListener("mousedown",e=>{
+  const a = Math.atan2(e.clientY-player.y, e.clientX-player.x);
+  bullets.push({
+    x: player.x,
+    y: player.y,
+    vx: Math.cos(a)*6,
+    vy: Math.sin(a)*6
   });
-}
-setInterval(spawnBigEnemy, 75000);
-/* ============================ */
+});
 
 /* NORMAL ENEMY */
 function spawnEnemy(){
-  enemies.push({x:Math.random()<0.5?-20:canvas.width+20,y:Math.random()*canvas.height,r:8,hp:1});
+  enemies.push({
+    x: Math.random()<0.5?-20:canvas.width+20,
+    y: Math.random()*canvas.height,
+    r: 8,
+    hp: 1
+  });
 }
 setInterval(spawnEnemy,800);
+
+/* BIG HEX ENEMY — EVERY 1:15 */
+function spawnBigEnemy(){
+  bigEnemies.push({
+    x: Math.random()<0.5?-60:canvas.width+60,
+    y: Math.random()*canvas.height,
+    r: 18,
+    sides: 6,
+    hp: 30,
+    maxHp: 30
+  });
+}
+setInterval(spawnBigEnemy, 75000);
 
 /* UPDATE */
 function update(){
@@ -65,63 +111,99 @@ function update(){
   if(keys.a) player.x-=4;
   if(keys.d) player.x+=4;
 
+  /* PLAYER SPIN (FIXED) */
+  player.angle += 0.05;
+
+  /* BULLETS */
   bullets.forEach((b,i)=>{
-    b.x+=b.vx; b.y+=b.vy;
-    if(b.x<0||b.x>canvas.width||b.y<0||b.y>canvas.height) bullets.splice(i,1);
+    b.x+=b.vx;
+    b.y+=b.vy;
+    if(b.x<0||b.x>canvas.width||b.y<0||b.y>canvas.height)
+      bullets.splice(i,1);
   });
 
-  enemies.forEach((e,i)=>{
-    const dx=player.x-e.x, dy=player.y-e.y, d=Math.hypot(dx,dy)||1;
-    e.x+=dx/d*1; e.y+=dy/d*1;
+  /* NORMAL ENEMIES */
+  enemies.forEach((e,ei)=>{
+    const dx=player.x-e.x, dy=player.y-e.y;
+    const d=Math.hypot(dx,dy)||1;
+    e.x+=dx/d*0.7;
+    e.y+=dy/d*0.7;
+
+    bullets.forEach((b,bi)=>{
+      if(Math.hypot(b.x-e.x,b.y-e.y)<e.r){
+        bullets.splice(bi,1);
+        enemies.splice(ei,1);
+        mass++; player.tokens++;
+      }
+    });
   });
 
-  /* ===== BIG ENEMY UPDATE (ADDED) ===== */
-  bigEnemies.forEach((e,i)=>{
-    const dx=player.x-e.x, dy=player.y-e.y, d=Math.hypot(dx,dy)||1;
-    e.x+=dx/d*0.8;
-    e.y+=dy/d*0.8;
+  /* BIG HEX ENEMIES */
+  bigEnemies.forEach((e,ei)=>{
+    const dx=player.x-e.x, dy=player.y-e.y;
+    const d=Math.hypot(dx,dy)||1;
+    e.x+=dx/d*0.5;
+    e.y+=dy/d*0.5;
 
     bullets.forEach((b,bi)=>{
       if(Math.hypot(b.x-e.x,b.y-e.y)<e.r){
         bullets.splice(bi,1);
         e.hp--;
         if(e.hp<=0){
-          bigEnemies.splice(i,1);
-          mass+=5;
-          player.tokens+=5;
+          bigEnemies.splice(ei,1);
+          mass+=10;
         }
       }
     });
   });
-  /* ================================== */
 
-  document.getElementById('mass').textContent=mass;
-  document.getElementById('tokens').textContent=player.tokens;
+  document.getElementById("mass").textContent = mass;
+  document.getElementById("tokens").textContent = player.tokens;
 }
 
 /* DRAW */
 function draw(){
-  ctx.fillStyle="#0b0b0b";
+  ctx.fillStyle="rgba(11,11,11,0.3)";
   ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  /* PLAYER */
+  ctx.save();
+  ctx.translate(player.x,player.y);
+  ctx.rotate(player.angle);
+  ctx.fillStyle="#4caf50";
+  ctx.beginPath();
+  for(let i=0;i<currentShapeSides;i++){
+    const a=i*Math.PI*2/currentShapeSides-Math.PI/2;
+    ctx.lineTo(Math.cos(a)*player.r, Math.sin(a)*player.r);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  /* BULLETS (WHITE — FIXED) */
+  bullets.forEach(b=>{
+    ctx.fillStyle="#fff";
+    ctx.fillRect(b.x,b.y,3,3);
+  });
 
   /* NORMAL ENEMIES */
   enemies.forEach(e=>{
-    ctx.fillStyle='red';
+    ctx.fillStyle="red";
     ctx.beginPath();
     ctx.arc(e.x,e.y,e.r,0,Math.PI*2);
     ctx.fill();
   });
 
-  /* ===== BIG ENEMY DRAW (ADDED) ===== */
+  /* BIG HEX ENEMY */
   bigEnemies.forEach(e=>{
     ctx.save();
     ctx.translate(e.x,e.y);
-    ctx.shadowColor='rgba(210,170,255,0.9)';
-    ctx.shadowBlur=20;
 
-    ctx.fillStyle='#000';
-    ctx.strokeStyle='rgb(210,170,255)';
+    ctx.strokeStyle="#c77dff";
     ctx.lineWidth=3;
+    ctx.shadowColor="#c77dff";
+    ctx.shadowBlur=15;
+    ctx.fillStyle="#000";
 
     ctx.beginPath();
     for(let i=0;i<6;i++){
@@ -131,33 +213,24 @@ function draw(){
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
+
+    ctx.shadowBlur=0;
+    ctx.fillStyle="#c77dff";
+    ctx.font="14px sans-serif";
+    ctx.textAlign="center";
+    ctx.fillText(e.hp,0,-e.r-10);
+
     ctx.restore();
-
-    ctx.fillStyle='#fff';
-    ctx.font='14px Arial';
-    ctx.textAlign='center';
-    ctx.fillText(e.hp, e.x, e.y-e.r-8);
-  });
-  /* ================================= */
-
-  bullets.forEach(b=>{
-    ctx.fillStyle='#fff';
-    ctx.fillRect(b.x,b.y,3,3);
   });
 }
 
 /* LOOP */
-function loop(){update();draw();requestAnimationFrame(loop);}
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
 loop();
-
-/* INPUT */
-window.addEventListener('keydown',e=>{
-  keys[e.key.toLowerCase()]=true;
-  if(e.key===' '){
-    bullets.push({x:player.x,y:player.y,vx:6,vy:0});
-  }
-});
-window.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
 </script>
 </body>
 </html>

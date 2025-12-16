@@ -31,24 +31,22 @@ canvas { display:block; }
   max-height:180px;
   overflow-y:auto;
   font-size:13px;
-  position:relative;
 }
 
 .lb-row {
   display:flex;
   justify-content:space-between;
   opacity:0.85;
-  position:relative;
   animation: floatUpDown 2s infinite alternate;
 }
 
 @keyframes floatUpDown {
-  0%{top:0px;}
-  100%{top:4px;}
+  0%{transform:translateY(0);}
+  100%{transform:translateY(4px);}
 }
 
 .comboText {
-  position: absolute;
+  position:absolute;
   top:10px;
   left:50%;
   transform:translateX(-50%);
@@ -60,8 +58,8 @@ canvas { display:block; }
 }
 
 @keyframes floatCombo {
-  0%{opacity:1; top:10px;}
-  100%{opacity:0; top:-40px;}
+  0%{opacity:1; transform:translate(-50%,0);}
+  100%{opacity:0; transform:translate(-50%,-40px);}
 }
 
 button {
@@ -79,8 +77,7 @@ button:hover{opacity:0.85;}
 <body>
 
 <div id="ui">
-  <div><b>Player</b></div>
-  <hr>
+  <b>Player</b><hr>
   <div>Mass: <span id="mass">0</span></div>
   <div>Shape: <span id="tier">Triangle</span></div>
   <div>Tokens: <span id="tokens">0</span></div>
@@ -104,20 +101,19 @@ window.addEventListener('resize',()=>{
   canvas.height=innerHeight;
 });
 
-/* ================= BACKGROUND IMAGE ================= */
+/* ================= BACKGROUND ================= */
 const bgImg = new Image();
-bgImg.src = "bg.png"; // <-- YOUR IMAGE HERE
+bgImg.src = "bg.png";
 
 const bgObj = {
   x: canvas.width/2,
   y: canvas.height/2,
   vx: (Math.random()*0.4+0.1)*(Math.random()<0.5?-1:1),
   vy: (Math.random()*0.4+0.1)*(Math.random()<0.5?-1:1),
-  size: 28
   size: 42
 };
-/* ==================================================== */
 
+/* ================= PLAYER ================= */
 let player = {
   x:canvas.width/2,
   y:canvas.height/2,
@@ -125,43 +121,34 @@ let player = {
   sides:3,
   angle:0,
   tokens:0,
-  health:100,
   rainbow:false
 };
 
 let bullets=[], enemies=[], particles=[];
 let keys={}, idleMode=false, idleInterval=null;
 let combo=0, lastHit=0, mass=0;
+let rainbowTimer=null;
 
 /* ================= FIRE ================= */
 function fireSingle(){
-  if(player.rainbow){
-    const spread=0.2;
-    for(let i=-1;i<=2;i++){
-      const a=player.angle+i*spread;
-      bullets.push({
-        x:player.x,
-        y:player.y,
-        vx:Math.cos(a)*5,
-        vy:Math.sin(a)*5,
-        rainbow:true
-      });
-    }
-  } else {
+  const spread = player.rainbow ? 0.2 : 0;
+  const shots = player.rainbow ? 4 : 1;
+
+  for(let i=0;i<shots;i++){
+    const a = player.angle + (i-1.5)*spread;
     bullets.push({
       x:player.x,
       y:player.y,
-      vx:Math.cos(player.angle)*5,
-      vy:Math.sin(player.angle)*5,
-      rainbow:false
+      vx:Math.cos(a)*5,
+      vy:Math.sin(a)*5,
+      rainbow:player.rainbow
     });
   }
 }
 
 function fireSpread(){
-  const count=8;
-  for(let i=0;i<count;i++){
-    const a=i*Math.PI*2/count+player.angle;
+  for(let i=0;i<8;i++){
+    const a=i*Math.PI*2/8+player.angle;
     bullets.push({
       x:player.x,
       y:player.y,
@@ -174,11 +161,11 @@ function fireSpread(){
 
 /* ================= EVOLUTION ================= */
 function evolve(){
-  if(player.tokens<5) player.sides=3;
-  else if(player.tokens<10) player.sides=4;
-  else if(player.tokens<20) player.sides=5;
-  else if(player.tokens<50) player.sides=6;
-  else player.sides=8;
+  player.sides =
+    player.tokens<5 ? 3 :
+    player.tokens<10 ? 4 :
+    player.tokens<20 ? 5 :
+    player.tokens<50 ? 6 : 8;
 }
 
 /* ================= ENEMIES ================= */
@@ -186,14 +173,12 @@ function spawnEnemy(){
   enemies.push({
     x:Math.random()<0.5?-20:canvas.width+20,
     y:Math.random()*canvas.height,
-    r:8,
-    hp:1,
-    gradient:"red"
+    r:8
   });
 }
 setInterval(spawnEnemy,1000);
 
-/* ================= EXPLOSION ================= */
+/* ================= FX ================= */
 function createExplosion(x,y){
   for(let i=0;i<12;i++){
     particles.push({
@@ -206,7 +191,6 @@ function createExplosion(x,y){
   }
 }
 
-/* ================= COMBO ================= */
 function showCombo(n){
   const d=document.createElement('div');
   d.className='comboText';
@@ -232,12 +216,12 @@ function update(){
     player.y+=(canvas.height/2-player.y)*0.05;
   }
 
+  player.x=Math.max(player.r,Math.min(canvas.width-player.r,player.x));
+  player.y=Math.max(player.r,Math.min(canvas.height-player.r,player.y));
+
   player.angle+=0.05;
 
-  bullets.forEach(b=>{
-    b.x+=b.vx;
-    b.y+=b.vy;
-  });
+  bullets.forEach(b=>{ b.x+=b.vx; b.y+=b.vy; });
 
   enemies.forEach(e=>{
     const dx=player.x-e.x, dy=player.y-e.y;
@@ -246,41 +230,44 @@ function update(){
     e.y+=dy/d*0.5;
   });
 
-  bullets.forEach((b,bi)=>{
-    enemies.forEach((e,ei)=>{
-      if(Math.hypot(b.x-e.x,b.y-e.y)<e.r){
-        bullets.splice(bi,1);
-        enemies.splice(ei,1);
-        createExplosion(e.x,e.y);
+  for(let i=bullets.length-1;i>=0;i--){
+    for(let j=enemies.length-1;j>=0;j--){
+      if(Math.hypot(bullets[i].x-enemies[j].x, bullets[i].y-enemies[j].y) < enemies[j].r){
+        createExplosion(enemies[j].x,enemies[j].y);
+        bullets.splice(i,1);
+        enemies.splice(j,1);
+
         mass++; player.tokens++; evolve();
-        combo++;
+        combo = now-lastHit<1000 ? combo+1 : 1;
+        lastHit=now;
+
         if(combo>1) showCombo(combo);
+
         if(combo>=10){
           player.rainbow=true;
-          setTimeout(()=>player.rainbow=false,60000);
+          clearTimeout(rainbowTimer);
+          rainbowTimer=setTimeout(()=>player.rainbow=false,60000);
         }
+        break;
       }
-    });
-  });
+    }
+  }
+
+  if(now-lastHit>1500) combo=0;
 
   particles.forEach(p=>{
-    p.x+=p.vx;
-    p.y+=p.vy;
-    p.alpha-=0.03;
+    p.x+=p.vx; p.y+=p.vy; p.alpha-=0.03;
   });
   particles=particles.filter(p=>p.alpha>0);
 
-  /* BACKGROUND IMAGE MOVEMENT */
   bgObj.x+=bgObj.vx;
   bgObj.y+=bgObj.vy;
   if(bgObj.x<bgObj.size||bgObj.x>canvas.width-bgObj.size) bgObj.vx*=-1;
   if(bgObj.y<bgObj.size||bgObj.y>canvas.height-bgObj.size) bgObj.vy*=-1;
 
-  document.getElementById('mass').textContent=mass;
-  document.getElementById('tokens').textContent=player.tokens;
-  document.getElementById('tier').textContent=
-    ['Triangle','Square','Pentagon','Hexagon','Octagon']
-    [Math.min(player.sides-3,4)];
+  massEl.textContent=mass;
+  tokensEl.textContent=player.tokens;
+  tierEl.textContent=['Triangle','Square','Pentagon','Hexagon','Octagon'][Math.min(player.sides-3,4)];
 }
 
 /* ================= DRAW ================= */
@@ -288,26 +275,16 @@ function draw(){
   ctx.fillStyle="rgba(11,11,11,0.25)";
   ctx.fillRect(0,0,canvas.width,canvas.height);
 
-  /* BACKGROUND IMAGE */
   if(bgImg.complete){
     ctx.globalAlpha=0.25;
-    ctx.drawImage(
-      bgImg,
-      bgObj.x-bgObj.size/2,
-      bgObj.y-bgObj.size/2,
-      bgObj.size,
-      bgObj.size
-    );
+    ctx.drawImage(bgImg,bgObj.x-bgObj.size/2,bgObj.y-bgObj.size/2,bgObj.size,bgObj.size);
     ctx.globalAlpha=1;
   }
 
-  /* PLAYER */
   ctx.save();
   ctx.translate(player.x,player.y);
   ctx.rotate(player.angle);
-  ctx.fillStyle=player.rainbow
-    ?`hsl(${Date.now()%360},100%,50%)`
-    :'#4caf50';
+  ctx.fillStyle=player.rainbow?`hsl(${Date.now()%360},100%,50%)`:'#4caf50';
   ctx.beginPath();
   for(let i=0;i<player.sides;i++){
     const a=i*Math.PI*2/player.sides-Math.PI/2;
@@ -318,9 +295,7 @@ function draw(){
   ctx.restore();
 
   bullets.forEach(b=>{
-    ctx.fillStyle=b.rainbow
-      ?`hsl(${Date.now()%360},100%,50%)`
-      :'#fff';
+    ctx.fillStyle=b.rainbow?`hsl(${Date.now()%360},100%,50%)`:'#fff';
     ctx.fillRect(b.x,b.y,3,3);
   });
 
@@ -339,6 +314,10 @@ function draw(){
   });
 }
 
+const massEl=document.getElementById('mass');
+const tokensEl=document.getElementById('tokens');
+const tierEl=document.getElementById('tier');
+
 function loop(){ update(); draw(); requestAnimationFrame(loop); }
 loop();
 
@@ -348,22 +327,13 @@ window.addEventListener('keydown',e=>{
   if(e.key===' '&&!idleMode) fireSingle();
   if(e.key.toLowerCase()==='h'&&!idleMode) fireSpread();
 });
-window.addEventListener('keyup',e=>{
-  keys[e.key.toLowerCase()]=false;
-});
+window.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
 
-/* ================= IDLE MODE ================= */
-document.getElementById('idleBtn').onclick=()=>{
+/* ================= IDLE ================= */
+idleBtn.onclick=()=>{
   idleMode=true;
+  idleBtn.style.display='none';
+  exitIdleBtn.style.display='block';
   idleInterval=setInterval(()=>{
-    for(let i=0;i<player.sides;i++) fireSingle();
-    if(combo>=10) fireSpread();
-  },1000);
-};
-document.getElementById('exitIdleBtn').onclick=()=>{
-  idleMode=false;
-  clearInterval(idleInterval);
-};
-</script>
-</body>
-</html>
+    fireSingle();
+    if(combo>=10) fire

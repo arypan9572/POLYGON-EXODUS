@@ -353,15 +353,25 @@ window.addEventListener('keyup',e=>{
 
 /* ================= IDLE MODE ================= */
 document.getElementById('idleBtn').onclick=()=>{
+  if(idleMode) return; // prevent duplicate idle loops
+
   idleMode=true;
+  document.getElementById('idleBtn').style.display='none';
+  document.getElementById('exitIdleBtn').style.display='block';
+
   idleInterval=setInterval(()=>{
     for(let i=0;i<player.sides;i++) fireSingle();
     if(combo>=10) fireSpread();
   },1000);
 };
+
 document.getElementById('exitIdleBtn').onclick=()=>{
   idleMode=false;
   clearInterval(idleInterval);
+  idleInterval=null;
+
+  document.getElementById('exitIdleBtn').style.display='none';
+  document.getElementById('idleBtn').style.display='block';
 };
 </script>
 </body>

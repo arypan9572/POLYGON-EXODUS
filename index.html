@@ -131,6 +131,8 @@ let player = {
 let bullets=[], enemies=[], particles=[];
 let keys={}, idleMode=false, idleInterval=null;
 let combo=0, lastHit=0, mass=0;
+let hUses = 12;
+
 
 /* ================= FIRE ================= */
 function fireSingle(){
@@ -191,6 +193,10 @@ function spawnEnemy(){
   });
 }
 setInterval(spawnEnemy,1000);
+  setInterval(()=>{
+  hUses = 12;
+}, 60000);
+
 
 /* ================= EXPLOSION ================= */
 function createExplosion(x,y){
@@ -280,6 +286,10 @@ function update(){
   document.getElementById('tier').textContent=
     ['Triangle','Square','Pentagon','Hexagon','Octagon']
     [Math.min(player.sides-3,4)];
+  // KEEP PLAYER ON SCREEN
+player.x = Math.max(player.r, Math.min(canvas.width - player.r, player.x));
+player.y = Math.max(player.r, Math.min(canvas.height - player.r, player.y));
+  
 }
 
 /* ================= DRAW ================= */

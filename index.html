@@ -294,27 +294,68 @@ function draw(){
 /* DRAW PLAYER */
 function drawPlayerShape(){
   const s = currentShapeSides;
-  ctx.save(); ctx.translate(player.x,player.y); ctx.rotate(player.angle);
+  const pixelSize = 3; // pixel size for final evolution
+  ctx.save(); 
+  ctx.translate(player.x,player.y); 
+  ctx.rotate(player.angle);
   ctx.fillStyle = player.rainbow ? `hsl(${Date.now()%360},100%,50%)`:'#4caf50';
-  ctx.beginPath();
 
+  // Final pixelated evolution
+  if(s===100){ 
+    for(let y=-player.r;y<=player.r;y+=pixelSize){
+      for(let x=-player.r;x<=player.r;x+=pixelSize){
+        if(x*x + y*y <= player.r*player.r){
+          ctx.fillRect(x - pixelSize/2, y - pixelSize/2, pixelSize, pixelSize);
+        }
+      }
+    }
+    ctx.restore();
+    return; // skip normal fill
+  }
+
+  ctx.beginPath();
   if([3,4,5,6,7,8,9,10].includes(s)){
-    for(let i=0;i<s;i++){ const a=i*Math.PI*2/s - Math.PI/2; ctx.lineTo(Math.cos(a)*player.r,Math.sin(a)*player.r); }
+    for(let i=0;i<s;i++){ 
+      const a=i*Math.PI*2/s - Math.PI/2; 
+      ctx.lineTo(Math.cos(a)*player.r,Math.sin(a)*player.r); 
+    }
     ctx.closePath();
-  } else if(s===100){ ctx.arc(0,0,player.r,0,Math.PI*2);
-  } else if(s===2){ ctx.moveTo(-player.r,0); ctx.quadraticCurveTo(0,-player.r,player.r,0); ctx.quadraticCurveTo(0,player.r,-player.r,0); ctx.closePath();
   } else if([50,60,70,80,90,101,102].includes(s)){
     let spikes;
-    switch(s){ case 50:spikes=4;break; case 60:spikes=6;break; case 70:spikes=7;break; case 80:spikes=5;break; case 90:spikes=6;break; case 101:spikes=6;break; case 102:spikes=7;break;}
-    for(let i=0;i<spikes*2;i++){ let r=i%2===0?player.r:player.r/2; if(s===101||s===102) r=i%2===0?player.r:player.r/3; const a=i*Math.PI/spikes - Math.PI/2; ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);}
+    switch(s){ 
+      case 50: spikes=4; break; case 60: spikes=6; break; case 70: spikes=7; break;
+      case 80: spikes=5; break; case 90: spikes=6; break; case 101: spikes=6; break; case 102: spikes=7; break;
+    }
+    for(let i=0;i<spikes*2;i++){
+      let r=i%2===0?player.r:player.r/2;
+      if(s===101||s===102) r=i%2===0?player.r:player.r/3;
+      const a=i*Math.PI/spikes - Math.PI/2; 
+      ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);
+    }
+    ctx.closePath();
+  } else if(s===2){
+    ctx.moveTo(-player.r,0); 
+    ctx.quadraticCurveTo(0,-player.r,player.r,0); 
+    ctx.quadraticCurveTo(0,player.r,-player.r,0); 
     ctx.closePath();
   } else if(s===103){ // Heart
-    ctx.moveTo(0,-player.r/2); ctx.bezierCurveTo(player.r, -player.r*1.2, player.r*1.5, player.r/3, 0, player.r); ctx.bezierCurveTo(-player.r*1.5, player.r/3, -player.r, -player.r*1.2, 0, -player.r/2); ctx.closePath();
+    ctx.moveTo(0,-player.r/2); 
+    ctx.bezierCurveTo(player.r, -player.r*1.2, player.r*1.5, player.r/3, 0, player.r); 
+    ctx.bezierCurveTo(-player.r*1.5, player.r/3, -player.r, -player.r*1.2, 0, -player.r/2); 
+    ctx.closePath();
   } else if(s===104){ // Diamond
-    ctx.moveTo(0,-player.r); ctx.lineTo(player.r/2,0); ctx.lineTo(0,player.r); ctx.lineTo(-player.r/2,0); ctx.closePath();
-  } else { ctx.arc(0,0,player.r,0,Math.PI*2);}
-  ctx.fill(); ctx.restore();
+    ctx.moveTo(0,-player.r); 
+    ctx.lineTo(player.r/2,0); 
+    ctx.lineTo(0,player.r); 
+    ctx.lineTo(-player.r/2,0); 
+    ctx.closePath();
+  } else { 
+    ctx.arc(0,0,player.r,0,Math.PI*2);
+  }
+  ctx.fill(); 
+  ctx.restore();
 }
+
 
 /* LOOP */
 function loop(){ update(); draw(); requestAnimationFrame(loop); }

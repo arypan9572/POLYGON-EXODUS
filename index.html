@@ -133,12 +133,13 @@ let player = {
   x:canvas.width/2,
   y:canvas.height/2,
   r:18,
-  sides:3,
   angle:0,
   tokens:0,
   health:100,
   rainbow:false
 };
+
+let currentShapeSides = 3; // NEW: tracks player shape permanently
 
 let bullets=[], enemies=[], particles=[];
 let keys={}, idleMode=false, idleInterval=null;
@@ -187,18 +188,18 @@ function fireSpread(){
 
 /* ================= EVOLUTION ================= */
 function evolve(){
-  if(player.tokens<5) player.sides=3;
-  else if(player.tokens<10) player.sides=4;
-  else if(player.tokens<20) player.sides=5;
-  else if(player.tokens<30) player.sides=6;
-  else if(player.tokens<40) player.sides=7;
-  else if(player.tokens<50) player.sides=8;
-  else if(player.tokens<60) player.sides=9;
-  else if(player.tokens<70) player.sides=10;
-  else if(player.tokens<80) player.sides=2;   // Digon
-  else if(player.tokens<90) player.sides=50;  // 4-sided star
-  else if(player.tokens<100) player.sides=60; // 6-sided star
-  else player.sides=100; // Circle
+  if(player.tokens<5) currentShapeSides=3;
+  else if(player.tokens<10) currentShapeSides=4;
+  else if(player.tokens<20) currentShapeSides=5;
+  else if(player.tokens<30) currentShapeSides=6;
+  else if(player.tokens<40) currentShapeSides=7;
+  else if(player.tokens<50) currentShapeSides=8;
+  else if(player.tokens<60) currentShapeSides=9;
+  else if(player.tokens<70) currentShapeSides=10;
+  else if(player.tokens<80) currentShapeSides=2;   // Digon
+  else if(player.tokens<90) currentShapeSides=50;  // 4-sided star
+  else if(player.tokens<100) currentShapeSides=60; // 6-sided star
+  else currentShapeSides=100; // Circle
 }
 
 /* ================= ENEMIES ================= */
@@ -290,6 +291,7 @@ function update(){
     if(d < player.r + e.r){
       combo = 0;
       player.rainbow = false;
+      // Shape no longer reverts
     }
   });
 
@@ -334,7 +336,7 @@ function update(){
 
   document.getElementById('mass').textContent=mass;
   document.getElementById('tokens').textContent=player.tokens;
-  document.getElementById('tier').textContent=getShapeName(player.sides);
+  document.getElementById('tier').textContent=getShapeName(currentShapeSides);
 
   // KEEP PLAYER ON SCREEN
   player.x = Math.max(player.r, Math.min(canvas.width - player.r, player.x));
@@ -390,6 +392,7 @@ function draw(){
 
 /* ================= DRAW PLAYER SHAPE ================= */
 function drawPlayerShape(){
+  const sides = currentShapeSides;
   ctx.save();
   ctx.translate(player.x,player.y);
   ctx.rotate(player.angle);
@@ -400,27 +403,20 @@ function drawPlayerShape(){
 
   ctx.beginPath();
 
-  // Regular polygons (3 → 10 sides)
-  if([3,4,5,6,7,8,9,10].includes(player.sides)){
-    for(let i=0;i<player.sides;i++){
-      const a=i*Math.PI*2/player.sides - Math.PI/2;
+  if([3,4,5,6,7,8,9,10].includes(sides)){
+    for(let i=0;i<sides;i++){
+      const a=i*Math.PI*2/sides - Math.PI/2;
       ctx.lineTo(Math.cos(a)*player.r, Math.sin(a)*player.r);
     }
     ctx.closePath();
-  }
-  // Circle
-  else if(player.sides === 100){
+  } else if(sides===100){
     ctx.arc(0,0,player.r,0,Math.PI*2);
-  }
-  // Digon
-  else if(player.sides === 2){
+  } else if(sides===2){
     ctx.moveTo(-player.r,0);
     ctx.quadraticCurveTo(0,-player.r, player.r,0);
     ctx.quadraticCurveTo(0,player.r, -player.r,0);
     ctx.closePath();
-  }
-  // 4-sided star
-  else if(player.sides === 50){
+  } else if(sides===50){
     const spikes = 4;
     for(let i=0;i<spikes*2;i++){
       const r = i%2===0 ? player.r : player.r/2;
@@ -428,9 +424,7 @@ function drawPlayerShape(){
       ctx.lineTo(Math.cos(a)*r, Math.sin(a)*r);
     }
     ctx.closePath();
-  }
-  // 6-sided star
-  else if(player.sides === 60){
+  } else if(sides===60){
     const spikes = 6;
     for(let i=0;i<spikes*2;i++){
       const r = i%2===0 ? player.r : player.r/2;
@@ -468,7 +462,7 @@ document.getElementById('idleBtn').onclick=()=>{
   document.getElementById('idleBtn').style.display='none';
   document.getElementById('exitIdleBtn').style.display='block';
   idleInterval=setInterval(()=>{
-    for(let i=0;i<player.sides;i++) fireSingle();
+    for(let i=0;i<currentShapeSides;i++) fireSingle();
     if(combo>=10) fireSpread();
   },1000);
 };

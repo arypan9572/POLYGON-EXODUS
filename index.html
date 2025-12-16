@@ -26,27 +26,6 @@ canvas { display:block; }
   font-size:14px;
 }
 
-#leaderboard {
-  margin-top:8px;
-  max-height:180px;
-  overflow-y:auto;
-  font-size:13px;
-  position:relative;
-}
-
-.lb-row {
-  display:flex;
-  justify-content:space-between;
-  opacity:0.85;
-  position:relative;
-  animation: floatUpDown 2s infinite alternate;
-}
-
-@keyframes floatUpDown {
-  0%{top:0px;}
-  100%{top:4px;}
-}
-
 .comboText {
   position: absolute;
   top:10px;
@@ -64,16 +43,16 @@ canvas { display:block; }
   100%{opacity:0; top:-40px;}
 }
 
-button {
-  width:100%;
-  padding:6px;
-  margin:4px 0;
-  border-radius:6px;
-  border:none;
-  cursor:pointer;
+/* PING DISPLAY */
+#ping {
+  position: fixed;
+  bottom:10px;
+  right:12px;
   font-weight:bold;
+  font-style:italic;
+  font-size:14px;
+  pointer-events:none;
 }
-button:hover{opacity:0.85;}
 </style>
 </head>
 <body>
@@ -84,12 +63,9 @@ button:hover{opacity:0.85;}
   <div>Mass: <span id="mass">0</span></div>
   <div>Shape: <span id="tier">Triangle</span></div>
   <div>Tokens: <span id="tokens">0</span></div>
-  <hr>
-  <b>Leaderboard</b>
-  <div id="leaderboard"></div>
-  <button id="idleBtn">IDLE MODE</button>
-  <button id="exitIdleBtn" style="display:none;">EXIT IDLE MODE</button>
 </div>
+
+<div id="ping">PING: 0 ms</div>
 
 <canvas id="game"></canvas>
 
@@ -104,18 +80,17 @@ window.addEventListener('resize',()=>{
   canvas.height=innerHeight;
 });
 
-/* ================= BACKGROUND IMAGE ================= */
+/* BACKGROUND IMAGE */
 const bgImg = new Image();
-bgImg.src = "bg.png"; // <-- YOUR IMAGE HERE
+bgImg.src = "bg.png";
 
 const bgObj = {
   x: canvas.width/2,
   y: canvas.height/2,
-  vx: (Math.random()*0.4+0.1)*(Math.random()<0.5?-1:1),
-  vy: (Math.random()*0.4+0.1)*(Math.random()<0.5?-1:1),
+  vx: 0.25,
+  vy: 0.25,
   size: 56
 };
-/* ==================================================== */
 
 let player = {
   x:canvas.width/2,
@@ -124,80 +99,40 @@ let player = {
   sides:3,
   angle:0,
   tokens:0,
-  health:100,
   rainbow:false
 };
 
 let bullets=[], enemies=[], particles=[];
-let keys={}, idleMode=false, idleInterval=null;
-let combo=0, lastHit=0, mass=0;
+let keys={}, combo=0, mass=0;
 
-/* ================= FIRE ================= */
+/* FIRE */
 function fireSingle(){
   if(player.rainbow){
-    const spread=0.2;
     for(let i=-1;i<=2;i++){
-      const a=player.angle+i*spread;
-      bullets.push({
-        x:player.x,
-        y:player.y,
-        vx:Math.cos(a)*5,
-        vy:Math.sin(a)*5,
-        rainbow:true
-      });
+      const a=player.angle+i*0.2;
+      bullets.push({x:player.x,y:player.y,vx:Math.cos(a)*5,vy:Math.sin(a)*5,rainbow:true});
     }
   } else {
-    bullets.push({
-      x:player.x,
-      y:player.y,
-      vx:Math.cos(player.angle)*5,
-      vy:Math.sin(player.angle)*5,
-      rainbow:false
-    });
+    bullets.push({x:player.x,y:player.y,vx:Math.cos(player.angle)*5,vy:Math.sin(player.angle)*5,rainbow:false});
   }
 }
 
-function fireSpread(){
-  const count=8;
-  for(let i=0;i<count;i++){
-    const a=i*Math.PI*2/count+player.angle;
-    bullets.push({
-      x:player.x,
-      y:player.y,
-      vx:Math.cos(a)*6,
-      vy:Math.sin(a)*6,
-      rainbow:player.rainbow
-    });
-  }
-}
-
-/* ================= EVOLUTION ================= */
-function evolve(){
-  if(player.tokens<5) player.sides=3;
-  else if(player.tokens<10) player.sides=4;
-  else if(player.tokens<20) player.sides=5;
-  else if(player.tokens<50) player.sides=6;
-  else player.sides=8;
-}
-
-/* ================= ENEMIES ================= */
+/* ENEMIES */
 function spawnEnemy(){
   enemies.push({
     x:Math.random()<0.5?-20:canvas.width+20,
     y:Math.random()*canvas.height,
-    r:8,
-    hp:1,
-    gradient:"red"
+    r:8
   });
 }
 setInterval(spawnEnemy,1000);
 
-/* ================= EXPLOSION ================= */
+/* EXPLOSION */
 function createExplosion(x,y){
-  for(let i=0;i<12;i++){
+  for(let i=0;i<10;i++){
     particles.push({
       x,y,
-      r:Math.random()*4+2,
+      r:Math.random()*3+2,
       vx:(Math.random()-0.5)*4,
       vy:(Math.random()-0.5)*4,
       alpha:1
@@ -205,39 +140,32 @@ function createExplosion(x,y){
   }
 }
 
-/* ================= COMBO ================= */
+/* COMBO */
 function showCombo(n){
   const d=document.createElement('div');
   d.className='comboText';
   d.textContent='COMBO x'+n;
-  d.style.color=player.rainbow
-    ?`hsl(${Date.now()%360},100%,50%)`
-    :'#fff';
+  d.style.color=`hsl(${Date.now()%360},100%,50%)`;
   document.body.appendChild(d);
   setTimeout(()=>d.remove(),1000);
 }
 
-/* ================= UPDATE ================= */
+/* UPDATE */
+let lastFrame = performance.now();
+let ping = 0;
+
 function update(){
-  const now=performance.now();
+  const now = performance.now();
+  ping = Math.min(999, Math.round(now - lastFrame));
+  lastFrame = now;
 
-  if(!idleMode){
-    if(keys.w) player.y-=3;
-    if(keys.s) player.y+=3;
-    if(keys.a) player.x-=3;
-    if(keys.d) player.x+=3;
-  } else {
-    player.x+=(canvas.width/2-player.x)*0.05;
-    player.y+=(canvas.height/2-player.y)*0.05;
-  }
-
+  if(keys.w) player.y-=3;
+  if(keys.s) player.y+=3;
+  if(keys.a) player.x-=3;
+  if(keys.d) player.x+=3;
   player.angle+=0.05;
 
-  bullets.forEach(b=>{
-    b.x+=b.vx;
-    b.y+=b.vy;
-  });
-
+  bullets.forEach(b=>{ b.x+=b.vx; b.y+=b.vy; });
   enemies.forEach(e=>{
     const dx=player.x-e.x, dy=player.y-e.y;
     const d=Math.hypot(dx,dy)||1;
@@ -245,68 +173,67 @@ function update(){
     e.y+=dy/d*0.5;
   });
 
+  /* COLLISIONS */
   bullets.forEach((b,bi)=>{
     enemies.forEach((e,ei)=>{
       if(Math.hypot(b.x-e.x,b.y-e.y)<e.r){
         bullets.splice(bi,1);
         enemies.splice(ei,1);
         createExplosion(e.x,e.y);
-        mass++; player.tokens++; evolve();
-        combo++;
-        if(combo>1) showCombo(combo);
-        if(combo>=10){
-          player.rainbow=true;
-          setTimeout(()=>player.rainbow=false,60000);
-        }
+        combo++; if(combo>1) showCombo(combo);
+        if(combo>=10) player.rainbow=true;
       }
     });
   });
 
+  /* HARD DESPAWN (NO LAG) */
+  bullets = bullets.filter(b =>
+    b.x>-20 && b.x<canvas.width+20 &&
+    b.y>-20 && b.y<canvas.height+20
+  );
+
+  enemies = enemies.filter(e =>
+    e.x>-40 && e.x<canvas.width+40 &&
+    e.y>-40 && e.y<canvas.height+40
+  );
+
   particles.forEach(p=>{
     p.x+=p.vx;
     p.y+=p.vy;
-    p.alpha-=0.03;
+    p.alpha-=0.04;
   });
-  particles=particles.filter(p=>p.alpha>0);
+  particles = particles.filter(p =>
+    p.alpha>0 &&
+    p.x>-20 && p.x<canvas.width+20 &&
+    p.y>-20 && p.y<canvas.height+20
+  );
 
-  /* BACKGROUND IMAGE MOVEMENT */
+  /* BACKGROUND MOVE */
   bgObj.x+=bgObj.vx;
   bgObj.y+=bgObj.vy;
   if(bgObj.x<bgObj.size||bgObj.x>canvas.width-bgObj.size) bgObj.vx*=-1;
   if(bgObj.y<bgObj.size||bgObj.y>canvas.height-bgObj.size) bgObj.vy*=-1;
 
-  document.getElementById('mass').textContent=mass;
-  document.getElementById('tokens').textContent=player.tokens;
-  document.getElementById('tier').textContent=
-    ['Triangle','Square','Pentagon','Hexagon','Octagon']
-    [Math.min(player.sides-3,4)];
+  document.getElementById('ping').style.color =
+    `hsl(${Date.now()%360},100%,50%)`;
+  document.getElementById('ping').textContent = `PING: ${ping} ms`;
 }
 
-/* ================= DRAW ================= */
+/* DRAW */
 function draw(){
   ctx.fillStyle="rgba(11,11,11,0.25)";
   ctx.fillRect(0,0,canvas.width,canvas.height);
 
-  /* BACKGROUND IMAGE */
   if(bgImg.complete){
     ctx.globalAlpha=0.25;
-    ctx.drawImage(
-      bgImg,
-      bgObj.x-bgObj.size/2,
-      bgObj.y-bgObj.size/2,
-      bgObj.size,
-      bgObj.size
-    );
+    ctx.drawImage(bgImg,bgObj.x-bgObj.size/2,bgObj.y-bgObj.size/2,bgObj.size,bgObj.size);
     ctx.globalAlpha=1;
   }
 
-  /* PLAYER */
   ctx.save();
   ctx.translate(player.x,player.y);
   ctx.rotate(player.angle);
-  ctx.fillStyle=player.rainbow
-    ?`hsl(${Date.now()%360},100%,50%)`
-    :'#4caf50';
+  ctx.fillStyle=player.rainbow?`hsl(${Date.now()%360},100%,50%)`:'#4caf50';
   ctx.beginPath();
   for(let i=0;i<player.sides;i++){
     const a=i*Math.PI*2/player.sides-Math.PI/2;
@@ -317,9 +244,7 @@ function draw(){
   ctx.restore();
 
   bullets.forEach(b=>{
-    ctx.fillStyle=b.rainbow
-      ?`hsl(${Date.now()%360},100%,50%)`
-      :'#fff';
+    ctx.fillStyle=b.rainbow?`hsl(${Date.now()%360},100%,50%)`:'#fff';
     ctx.fillRect(b.x,b.y,3,3);
   });
 
@@ -341,28 +266,12 @@ function draw(){
 function loop(){ update(); draw(); requestAnimationFrame(loop); }
 loop();
 
-/* ================= INPUT ================= */
+/* INPUT */
 window.addEventListener('keydown',e=>{
   keys[e.key.toLowerCase()]=true;
-  if(e.key===' '&&!idleMode) fireSingle();
-  if(e.key.toLowerCase()==='h'&&!idleMode) fireSpread();
+  if(e.key===' ') fireSingle();
 });
-window.addEventListener('keyup',e=>{
-  keys[e.key.toLowerCase()]=false;
-});
-
-/* ================= IDLE MODE ================= */
-document.getElementById('idleBtn').onclick=()=>{
-  idleMode=true;
-  idleInterval=setInterval(()=>{
-    for(let i=0;i<player.sides;i++) fireSingle();
-    if(combo>=10) fireSpread();
-  },1000);
-};
-document.getElementById('exitIdleBtn').onclick=()=>{
-  idleMode=false;
-  clearInterval(idleInterval);
-};
+window.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
 </script>
 </body>
 </html>

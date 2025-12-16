@@ -108,6 +108,10 @@ window.addEventListener('resize',()=>{
 const bgImg = new Image();
 bgImg.src = "bg.png"; // <-- YOUR IMAGE HERE
 
+const bgImg2 = new Image();
+bgImg2.src = "goonerola.png";
+
+
 const bgObj = {
   x: canvas.width/2,
   y: canvas.height/2,
@@ -115,6 +119,15 @@ const bgObj = {
   vy: (Math.random()*0.4+0.1)*(Math.random()<0.5?-1:1),
   size: 39
 };
+
+const bgObj2 = {
+  x: Math.random() * canvas.width,
+  y: Math.random() * canvas.height,
+  vx: (Math.random()*0.5+0.2)*(Math.random()<0.5?-1:1),
+  vy: (Math.random()*0.5+0.2)*(Math.random()<0.5?-1:1),
+  size: 36
+};
+
 /* ==================================================== */
 
 let player = {
@@ -288,6 +301,13 @@ function update(){
   if(bgObj.x<bgObj.size||bgObj.x>canvas.width-bgObj.size) bgObj.vx*=-1;
   if(bgObj.y<bgObj.size||bgObj.y>canvas.height-bgObj.size) bgObj.vy*=-1;
 
+  /* SECOND BACKGROUND IMAGE MOVEMENT */
+bgObj2.x+=bgObj2.vx;
+bgObj2.y+=bgObj2.vy;
+if(bgObj2.x<bgObj2.size||bgObj2.x>canvas.width-bgObj2.size) bgObj2.vx*=-1;
+if(bgObj2.y<bgObj2.size||bgObj2.y>canvas.height-bgObj2.size) bgObj2.vy*=-1;
+
+
   document.getElementById('mass').textContent=mass;
   document.getElementById('tokens').textContent=player.tokens;
   document.getElementById('tier').textContent=
@@ -316,6 +336,20 @@ function draw(){
     );
     ctx.globalAlpha=1;
   }
+
+  /* SECOND BACKGROUND IMAGE */
+if(bgImg2.complete){
+  ctx.globalAlpha = 0.25;
+  ctx.drawImage(
+    bgImg2,
+    bgObj2.x - bgObj2.size/2,
+    bgObj2.y - bgObj2.size/2,
+    bgObj2.size,
+    bgObj2.size
+  );
+  ctx.globalAlpha = 1;
+}
+
 
   /* PLAYER */
   ctx.save();

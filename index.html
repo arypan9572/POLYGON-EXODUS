@@ -66,6 +66,44 @@ let bullets=[],enemies=[],particles=[];
 let keys={},idleMode=false,idleInterval=null;
 let combo=0,mass=0,difficulty=1,hUses=12;
 
+/* BLUE CUBE */
+let blueCube = null;
+let nextCubeSpawn = Date.now() + (30000 + Math.random()*30000);
+let enemyOriginalSpeeds = new Map(); // stores original speeds for reset
+
+function updateBlueCube(deltaTime){
+  // spawn cube
+  if(!blueCube && Date.now()>=nextCubeSpawn){
+    blueCube = { x:Math.random()*canvas.width, y:Math.random()*canvas.height, size:25, speed:10 };
+  }
+
+  if(blueCube){
+    const dx = blueCube.x - player.x;
+    const dy = blueCube.y - player.y;
+    const dist = Math.hypot(dx,dy)||1;
+    const moveDist = blueCube.speed * deltaTime / 1000;
+    blueCube.x += (dx/dist) * moveDist;
+    blueCube.y += (dy/dist) * moveDist;
+
+    if(dist < blueCube.size/2 + player.r){
+      enemies.forEach(e=>{
+        if(!enemyOriginalSpeeds.has(e)) enemyOriginalSpeeds.set(e,0.7+difficulty*0.2); // store original
+        e.speed = (0.7+difficulty*0.2)*0.2;
+      });
+      blueCube = null;
+      nextCubeSpawn = Date.now() + (30000 + Math.random()*30000);
+      // reset speeds after 5 seconds
+      setTimeout(()=>{ enemies.forEach(e=>{e.speed = enemyOriginalSpeeds.get(e) || (0.7+difficulty*0.2); }); enemyOriginalSpeeds.clear(); },5000);
+    }
+  }
+}
+
+function drawBlueCube(){
+  if(!blueCube) return;
+  ctx.fillStyle="blue";
+  ctx.fillRect(blueCube.x-blueCube.size/2, blueCube.y-blueCube.size/2, blueCube.size, blueCube.size);
+}
+
 /* CAMERA SHAKE */
 let shakeAmount=0;
 function shakeCamera(amount){ shakeAmount=amount; }
@@ -147,6 +185,8 @@ function getShapeName(sides){
 
 /* UPDATE */
 function update(){
+  const now = performance.now();
+
   if(!idleMode){ if(keys.w)player.y-=4; if(keys.s)player.y+=4; if(keys.a)player.x-=4; if(keys.d)player.x+=4; }
   else{ player.x+=(canvas.width/2-player.x)*0.05; player.y+=(canvas.height/2-player.y)*0.05; }
   player.angle+=0.08;
@@ -161,8 +201,8 @@ function update(){
   for(let ei=enemies.length-1;ei>=0;ei--){
     let e=enemies[ei];
     const dx=player.x-e.x, dy=player.y-e.y, d=Math.hypot(dx,dy)||1;
-    const speed=0.7+difficulty*0.2;
-    e.x+=dx/d*speed; e.y+=dy/d*speed;
+    if(e.speed === undefined) e.speed = 0.7 + difficulty*0.2;
+    e.x += dx/d * e.speed; e.y += dy/d * e.speed;
 
     if(d<player.r+e.r){ 
       const idx=shapeOrder.indexOf(currentShapeSides); 
@@ -185,7 +225,7 @@ function update(){
         enemies.splice(ei,1);
         createExplosion(e.x,e.y);
         mass++; player.tokens++; evolve(); combo++;
-        shakeCamera(8); // shake on enemy kill
+        shakeCamera(8);
         if(mass%20===0) difficulty++;
         if(combo>1) showCombo(combo);
         if(combo>=35&&!player.rainbow) player.rainbow=true;
@@ -210,6 +250,10 @@ function update(){
   document.getElementById('tier').textContent=getShapeName(currentShapeSides);
   player.x=Math.max(player.r,Math.min(canvas.width-player.r,player.x));
   player.y=Math.max(player.r,Math.min(canvas.height-player.r,player.y));
+
+  // update blue cube
+  updateBlueCube(now - (updateBlueCube.lastTime || now));
+  updateBlueCube.lastTime = now;
 }
 
 /* DRAW */
@@ -231,6 +275,10 @@ function draw(){
   bullets.forEach(b=>{ctx.fillStyle=b.rainbow?`hsl(${Date.now()%360},100%,50%)`:'#fff'; ctx.fillRect(b.x,b.y,3,3);});
   enemies.forEach(e=>{ctx.fillStyle='red';ctx.beginPath();ctx.arc(e.x,e.y,e.r,0,Math.PI*2);ctx.fill();});
   particles.forEach(p=>{ctx.fillStyle=`rgba(255,0,0,${p.alpha})`;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();});
+
+  // draw blue cube
+  drawBlueCube();
+
   ctx.restore();
 }
 

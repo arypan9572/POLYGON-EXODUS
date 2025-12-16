@@ -355,7 +355,11 @@ loop();
 window.addEventListener('keydown',e=>{
   keys[e.key.toLowerCase()]=true;
   if(e.key===' '&&!idleMode) fireSingle();
-  if(e.key.toLowerCase()==='h'&&!idleMode) fireSpread();
+ if(e.key.toLowerCase()==='h' && !idleMode && hUses > 0){
+  fireSpread();
+  hUses--;
+}
+
 });
 window.addEventListener('keyup',e=>{
   keys[e.key.toLowerCase()]=false;

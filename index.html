@@ -144,6 +144,7 @@ let player = {
 let bullets=[], enemies=[], particles=[];
 let keys={}, idleMode=false, idleInterval=null;
 let combo=0, lastHit=0, mass=0;
+let difficulty = 1;
 let hUses = 12;
 
 
@@ -260,8 +261,10 @@ function update(){
  enemies.forEach(e=>{
   const dx=player.x-e.x, dy=player.y-e.y;
   const d=Math.hypot(dx,dy)||1;
-  e.x+=dx/d*0.5;
-  e.y+=dy/d*0.5;
+  const speed = 0.5 + difficulty * 0.15;
+e.x += dx/d * speed;
+e.y += dy/d * speed;
+
 
   // PLAYER TOUCHES the ENEMY
   if(d < player.r + e.r){
@@ -277,8 +280,16 @@ function update(){
         bullets.splice(bi,1);
         enemies.splice(ei,1);
         createExplosion(e.x,e.y);
-        mass++; player.tokens++; evolve();
-        combo++;
+        mass++; 
+player.tokens++; 
+evolve();
+combo++;
+
+// EVERY 25 KILLS = HARDER GAME
+if(mass % 25 === 0){
+  difficulty++;
+}
+
         if(combo>1) showCombo(combo);
        if(combo >= 35 && !player.rainbow){
   player.rainbow = true;

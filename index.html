@@ -122,7 +122,6 @@ function fireSpread(){ const count=8; for(let i=0;i<count;i++){ const a=i*Math.P
 let pixelated=false; // <<< tracks pixelated shapes
 const shapeOrder=[3,4,5,6,7,8,9,10,2,50,60,70,80,90,101,102,103,104,100];
 function evolve(){
-  // Normal evolution
   if(!pixelated){
     if(player.tokens<5) currentShapeSides=3;
     else if(player.tokens<10) currentShapeSides=4;
@@ -143,15 +142,12 @@ function evolve(){
     else if(player.tokens<85) currentShapeSides=103;
     else if(player.tokens<90) currentShapeSides=104;
     else currentShapeSides=100;
-    if(currentShapeSides===100) pixelated=true; // Begin pixelated cycle after circle
-  } else { 
-    // Pixelated evolution
-    const pixelOrder=[3,4,5,6,7,8,9,10,100]; // simplified pixelated cycle
+    if(currentShapeSides===100) pixelated=true;
+  } else {
+    const pixelOrder=[3,4,5,6,7,8,9,10,100];
     const idx = pixelOrder.indexOf(currentShapeSides);
     currentShapeSides = pixelOrder[Math.min(idx+1,pixelOrder.length-1)];
   }
-
-  // Bullet multiplier for circle
   bulletMultiplier = (currentShapeSides===100)?2:1;
 }
 
@@ -168,35 +164,6 @@ function showCombo(n){ const d=document.createElement('div'); d.className='combo
 
 /* SHAPE NAMES */
 function getShapeName(sides){ switch(sides){ case 3: return "Triangle"; case 4: return "Square"; case 5: return "Pentagon"; case 6: return "Hexagon"; case 7: return "Heptagon"; case 8: return "Octagon"; case 9: return "Nonagon"; case 10: return "Decagon"; case 2: return "Digon"; case 50: return "4-sided Star"; case 60: return "6-sided Star"; case 70: return "7-sided Star"; case 80: return "5-point Star"; case 90: return "6-point Star"; case 101: return "Hexagram"; case 102: return "Heptagram"; case 103: return "Heart"; case 104: return "Diamond"; case 100: return "Circle"; default: return "Unknown"; }}
-
-/* UPDATE */
-function update(){
-  const now = performance.now();
-  if(!idleMode){ if(keys.w)player.y-=4; if(keys.s)player.y+=4; if(keys.a)player.x-=4; if(keys.d)player.x+=4; }
-  else{ player.x+=(canvas.width/2-player.x)*0.05; player.y+=(canvas.height/2-player.y)*0.05; }
-  player.angle+=0.08;
-
-  for(let bi=bullets.length-1;bi>=0;bi--){ let b=bullets[bi]; b.x+=b.vx; b.y+=b.vy; if(b.x<0||b.x>canvas.width||b.y<0||b.y>canvas.height) bullets.splice(bi,1); }
-  for(let ei=enemies.length-1;ei>=0;ei--){ let e=enemies[ei]; const dx=player.x-e.x, dy=player.y-e.y, d=Math.hypot(dx,dy)||1; if(e.speed===undefined)e.speed=0.7+difficulty*0.2; e.x+=dx/d*e.speed; e.y+=dy/d*e.speed; if(d<player.r+e.r){ const idx=shapeOrder.indexOf(currentShapeSides); currentShapeSides=shapeOrder[Math.max(0,idx-3)]; combo=0; player.rainbow=false; shakeCamera(5); enemies.splice(ei,1);} if(e.x<-50||e.x>canvas.width+50||e.y<-50||e.y>canvas.height+50) enemies.splice(ei,1); }
-
-  for(let bi=bullets.length-1;bi>=0;bi--){ let b=bullets[bi]; for(let ei=enemies.length-1;ei>=0;ei--){ let e=enemies[ei]; if(Math.hypot(b.x-e.x,b.y-e.y)<e.r){ bullets.splice(bi,1); enemies.splice(ei,1); createExplosion(e.x,e.y); mass++; player.tokens++; evolve(); combo++; shakeCamera(8); if(mass%20===0)difficulty++; if(combo>1)showCombo(combo); if(combo>=35&&!player.rainbow)player.rainbow=true; break; } } }
-
-  for(let pi=particles.length-1;pi>=0;pi--){ let p=particles[pi]; p.x+=p.vx; p.y+=p.vy; p.alpha-=0.03; if(p.alpha<=0)particles.splice(pi,1); }
-
-  bgObj.x+=bgObj.vx; bgObj.y+=bgObj.vy; if(bgObj.x<bgObj.size||bgObj.x>canvas.width-bgObj.size) bgObj.vx*=-1; if(bgObj.y<bgObj.size||bgObj.y>canvas.height-bgObj.size) bgObj.vy*=-1;
-  bgObj2.x+=bgObj2.vx; bgObj2.y+=bgObj2.vy; if(bgObj2.x<bgObj2.size||bgObj2.x>canvas.width-bgObj2.size) bgObj2.vx*=-1; if(bgObj2.y<bgObj2.size||bgObj2.y>canvas.height-bgObj2.size) bgObj2.vy*=-1;
-
-  document.getElementById('mass').textContent=mass;
-  document.getElementById('tokens').textContent=player.tokens;
-  document.getElementById('tier').textContent=getShapeName(currentShapeSides);
-  player.x=Math.max(player.r,Math.min(canvas.width-player.r,player.x));
-  player.y=Math.max(player.r,Math.min(canvas.height-player.r,player.y));
-
-  updateBlueCube(now-(updateBlueCube.lastTime||now));
-  updateBlueCube.lastTime=now;
-
-  checkCircleMessage();
-}
 
 /* CIRCLE MESSAGE FUNCTION */
 let circleMessageShown = false;
@@ -234,6 +201,35 @@ function checkCircleMessage(){
       },30);
     },5000);
   }
+}
+
+/* UPDATE */
+function update(){
+  const now = performance.now();
+  if(!idleMode){ if(keys.w)player.y-=4; if(keys.s)player.y+=4; if(keys.a)player.x-=4; if(keys.d)player.x+=4; }
+  else{ player.x+=(canvas.width/2-player.x)*0.05; player.y+=(canvas.height/2-player.y)*0.05; }
+  player.angle+=0.08;
+
+  for(let bi=bullets.length-1;bi>=0;bi--){ let b=bullets[bi]; b.x+=b.vx; b.y+=b.vy; if(b.x<0||b.x>canvas.width||b.y<0||b.y>canvas.height) bullets.splice(bi,1); }
+  for(let ei=enemies.length-1;ei>=0;ei--){ let e=enemies[ei]; const dx=player.x-e.x, dy=player.y-e.y, d=Math.hypot(dx,dy)||1; if(e.speed===undefined)e.speed=0.7+difficulty*0.2; e.x+=dx/d*e.speed; e.y+=dy/d*e.speed; if(d<player.r+e.r){ const idx=shapeOrder.indexOf(currentShapeSides); currentShapeSides=shapeOrder[Math.max(0,idx-3)]; combo=0; player.rainbow=false; shakeCamera(5); enemies.splice(ei,1);} if(e.x<-50||e.x>canvas.width+50||e.y<-50||e.y>canvas.height+50) enemies.splice(ei,1); }
+
+  for(let bi=bullets.length-1;bi>=0;bi--){ let b=bullets[bi]; for(let ei=enemies.length-1;ei>=0;ei--){ let e=enemies[ei]; if(Math.hypot(b.x-e.x,b.y-e.y)<e.r){ bullets.splice(bi,1); enemies.splice(ei,1); createExplosion(e.x,e.y); mass++; player.tokens++; evolve(); combo++; shakeCamera(8); if(mass%20===0)difficulty++; if(combo>1)showCombo(combo); if(combo>=35&&!player.rainbow)player.rainbow=true; break; } } }
+
+  for(let pi=particles.length-1;pi>=0;pi--){ let p=particles[pi]; p.x+=p.vx; p.y+=p.vy; p.alpha-=0.03; if(p.alpha<=0)particles.splice(pi,1); }
+
+  bgObj.x+=bgObj.vx; bgObj.y+=bgObj.vy; if(bgObj.x<bgObj.size||bgObj.x>canvas.width-bgObj.size) bgObj.vx*=-1; if(bgObj.y<bgObj.size||bgObj.y>canvas.height-bgObj.size) bgObj.vy*=-1;
+  bgObj2.x+=bgObj2.vx; bgObj2.y+=bgObj2.vy; if(bgObj2.x<bgObj2.size||bgObj2.x>canvas.width-bgObj2.size) bgObj2.vx*=-1; if(bgObj2.y<bgObj2.size||bgObj2.y>canvas.height-bgObj2.size) bgObj2.vy*=-1;
+
+  document.getElementById('mass').textContent=mass;
+  document.getElementById('tokens').textContent=player.tokens;
+  document.getElementById('tier').textContent=getShapeName(currentShapeSides);
+  player.x=Math.max(player.r,Math.min(canvas.width-player.r,player.x));
+  player.y=Math.max(player.r,Math.min(canvas.height-player.r,player.y));
+
+  updateBlueCube(now-(updateBlueCube.lastTime||now));
+  updateBlueCube.lastTime=now;
+
+  checkCircleMessage();
 }
 
 /* DRAW */

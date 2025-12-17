@@ -60,6 +60,7 @@ const bgObj2={x:Math.random()*canvas.width,y:Math.random()*canvas.height,vx:(Mat
 /* PLAYER */
 let player={x:canvas.width/2,y:canvas.height/2,r:18,angle:0,tokens:0,health:100,rainbow:false};
 let currentShapeSides=3;
+let bulletMultiplier=1; // <<< Added to double bullets for circle
 
 /* GAME DATA */
 let bullets=[],enemies=[],particles=[];
@@ -107,12 +108,52 @@ let shakeAmount=0;
 function shakeCamera(amount){ shakeAmount=amount; }
 
 /* FIRE */
-function fireSingle(){ const spread=0.2; if(player.rainbow){ for(let i=-1;i<=2;i++){ const a=player.angle+i*spread; bullets.push({x:player.x,y:player.y,vx:Math.cos(a)*6,vy:Math.sin(a)*6,rainbow:true}); } } else bullets.push({x:player.x,y:player.y,vx:Math.cos(player.angle)*6,vy:Math.sin(player.angle)*6,rainbow:false}); }
+function fireSingle(){ 
+  const spread=0.2; 
+  let shots = bulletMultiplier; // <<< Circle doubles bullets
+  for(let s=0;s<shots;s++){
+    if(player.rainbow){ for(let i=-1;i<=2;i++){ const a=player.angle+i*spread; bullets.push({x:player.x,y:player.y,vx:Math.cos(a)*6,vy:Math.sin(a)*6,rainbow:true}); } }
+    else bullets.push({x:player.x,y:player.y,vx:Math.cos(player.angle)*6,vy:Math.sin(player.angle)*6,rainbow:false});
+  }
+}
 function fireSpread(){ const count=8; for(let i=0;i<count;i++){ const a=i*Math.PI*2/count+player.angle; bullets.push({x:player.x,y:player.y,vx:Math.cos(a)*7,vy:Math.sin(a)*7,rainbow:player.rainbow}); } }
 
 /* EVOLUTION */
+let pixelated=false; // <<< tracks pixelated shapes
 const shapeOrder=[3,4,5,6,7,8,9,10,2,50,60,70,80,90,101,102,103,104,100];
-function evolve(){ if(player.tokens<5) currentShapeSides=3; else if(player.tokens<10) currentShapeSides=4; else if(player.tokens<15) currentShapeSides=5; else if(player.tokens<20) currentShapeSides=6; else if(player.tokens<25) currentShapeSides=7; else if(player.tokens<30) currentShapeSides=8; else if(player.tokens<35) currentShapeSides=9; else if(player.tokens<40) currentShapeSides=10; else if(player.tokens<45) currentShapeSides=2; else if(player.tokens<50) currentShapeSides=50; else if(player.tokens<55) currentShapeSides=60; else if(player.tokens<60) currentShapeSides=70; else if(player.tokens<65) currentShapeSides=80; else if(player.tokens<70) currentShapeSides=90; else if(player.tokens<75) currentShapeSides=101; else if(player.tokens<80) currentShapeSides=102; else if(player.tokens<85) currentShapeSides=103; else if(player.tokens<90) currentShapeSides=104; else currentShapeSides=100;}
+function evolve(){
+  // Normal evolution
+  if(!pixelated){
+    if(player.tokens<5) currentShapeSides=3;
+    else if(player.tokens<10) currentShapeSides=4;
+    else if(player.tokens<15) currentShapeSides=5;
+    else if(player.tokens<20) currentShapeSides=6;
+    else if(player.tokens<25) currentShapeSides=7;
+    else if(player.tokens<30) currentShapeSides=8;
+    else if(player.tokens<35) currentShapeSides=9;
+    else if(player.tokens<40) currentShapeSides=10;
+    else if(player.tokens<45) currentShapeSides=2;
+    else if(player.tokens<50) currentShapeSides=50;
+    else if(player.tokens<55) currentShapeSides=60;
+    else if(player.tokens<60) currentShapeSides=70;
+    else if(player.tokens<65) currentShapeSides=80;
+    else if(player.tokens<70) currentShapeSides=90;
+    else if(player.tokens<75) currentShapeSides=101;
+    else if(player.tokens<80) currentShapeSides=102;
+    else if(player.tokens<85) currentShapeSides=103;
+    else if(player.tokens<90) currentShapeSides=104;
+    else currentShapeSides=100;
+    if(currentShapeSides===100) pixelated=true; // Begin pixelated cycle after circle
+  } else { 
+    // Pixelated evolution
+    const pixelOrder=[3,4,5,6,7,8,9,10,100]; // simplified pixelated cycle
+    const idx = pixelOrder.indexOf(currentShapeSides);
+    currentShapeSides = pixelOrder[Math.min(idx+1,pixelOrder.length-1)];
+  }
+
+  // Bullet multiplier for circle
+  bulletMultiplier = (currentShapeSides===100)?2:1;
+}
 
 /* ENEMIES */
 function spawnEnemy(){ enemies.push({x:Math.random()<0.5?-20:canvas.width+20, y:Math.random()*canvas.height, r:8, hp:1}); }
@@ -154,7 +195,7 @@ function update(){
   updateBlueCube(now-(updateBlueCube.lastTime||now));
   updateBlueCube.lastTime=now;
 
-  checkCircleMessage(); // <<< ADDED HERE
+  checkCircleMessage();
 }
 
 /* CIRCLE MESSAGE FUNCTION */
@@ -207,7 +248,13 @@ particles.forEach(p=>{ctx.fillStyle=`rgba(255,0,0,${p.alpha})`;ctx.beginPath();c
 drawBlueCube(); ctx.restore();}
 
 /* DRAW PLAYER */
-function drawPlayerShape(){ const s=currentShapeSides; ctx.save(); ctx.translate(player.x,player.y); ctx.rotate(player.angle); ctx.fillStyle=player.rainbow?`hsl(${Date.now()%360},100%,50%)`:'#4caf50'; ctx.beginPath(); if([3,4,5,6,7,8,9,10].includes(s)){ for(let i=0;i<s;i++){ const a=i*Math.PI*2/s-Math.PI/2; ctx.lineTo(Math.cos(a)*player.r,Math.sin(a)*player.r); } ctx.closePath(); } else if(s===100){ctx.arc(0,0,player.r,0,Math.PI*2);} else if(s===2){ctx.moveTo(-player.r,0); ctx.quadraticCurveTo(0,-player.r,player.r,0); ctx.quadraticCurveTo(0,player.r,-player.r,0); ctx.closePath();} else if([50,60,70,80,90,101,102].includes(s)){ let spikes; switch(s){ case 50:spikes=4;break; case 60:spikes=6;break; case 70:spikes=7;break; case 80:spikes=5;break; case 90:spikes=6;break; case 101:spikes=6;break; case 102:spikes=7;break;} for(let i=0;i<spikes*2;i++){let r=i%2===0?player.r:player.r/2;if(s===101||s===102) r=i%2===0?player.r:player.r/3;const a=i*Math.PI/spikes-Math.PI/2; ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);} ctx.closePath();} else if(s===103){ ctx.moveTo(0,-player.r/2); ctx.bezierCurveTo(player.r,-player.r*1.2,player.r*1.5,player.r/3,0,player.r); ctx.bezierCurveTo(-player.r*1.5,player.r/3,-player.r,-player.r*1.2,0,-player.r/2); ctx.closePath();} else if(s===104){ ctx.moveTo(0,-player.r); ctx.lineTo(player.r/2,0); ctx.lineTo(0,player.r); ctx.lineTo(-player.r/2,0); ctx.closePath(); } ctx.fill(); ctx.restore();}
+function drawPlayerShape(){ const s=currentShapeSides; ctx.save(); ctx.translate(player.x,player.y); ctx.rotate(player.angle); ctx.fillStyle=player.rainbow?`hsl(${Date.now()%360},100%,50%)`:'#4caf50'; ctx.beginPath(); 
+if([3,4,5,6,7,8,9,10].includes(s)){ for(let i=0;i<s;i++){ const a=i*Math.PI*2/s-Math.PI/2; ctx.lineTo(Math.cos(a)*player.r,Math.sin(a)*player.r); } ctx.closePath(); } 
+else if(s===100){ctx.arc(0,0,player.r,0,Math.PI*2);} 
+else if(s===2){ctx.moveTo(-player.r,0); ctx.quadraticCurveTo(0,-player.r,player.r,0); ctx.quadraticCurveTo(0,player.r,-player.r,0); ctx.closePath();} 
+else if([50,60,70,80,90,101,102].includes(s)){ let spikes; switch(s){ case 50:spikes=4;break; case 60:spikes=6;break; case 70:spikes=7;break; case 80:spikes=5;break; case 90:spikes=6;break; case 101:spikes=6;break; case 102:spikes=7;break;} for(let i=0;i<spikes*2;i++){let r=i%2===0?player.r:player.r/2;if(s===101||s===102) r=i%2===0?player.r:player.r/3;const a=i*Math.PI/spikes-Math.PI/2; ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);} ctx.closePath();} 
+else if(s===103){ ctx.moveTo(0,-player.r/2); ctx.bezierCurveTo(player.r,-player.r*1.2,player.r*1.5,player.r/3,0,player.r); ctx.bezierCurveTo(-player.r*1.5,player.r/3,-player.r,-player.r*1.2,0,-player.r/2); ctx.closePath();} 
+else if(s===104){ ctx.moveTo(0,-player.r); ctx.lineTo(player.r/2,0); ctx.lineTo(0,player.r); ctx.lineTo(-player.r/2,0); ctx.closePath(); } ctx.fill(); ctx.restore();}
 
 /* LOOP */
 let gamePaused=false;
@@ -236,6 +283,7 @@ document.getElementById("saveBtn").onclick = () => {
     playerRainbow:player.rainbow,
     playerX:player.x,
     playerY:player.y,
+    pixelated,
     enemies:enemies.map(e=>({x:e.x,y:e.y,r:e.r,hp:e.hp}))
   };
   saveText.value=btoa(JSON.stringify(data));
@@ -250,9 +298,11 @@ document.getElementById("loadBtn").onclick = () => {
     player.rainbow=!!data.playerRainbow;
     player.x=data.playerX ?? player.x;
     player.y=data.playerY ?? player.y;
+    pixelated=data.pixelated ?? false;
     enemies=data.enemies ?? [];
     savePanel.style.display="none";
     gamePaused=false;
+    bulletMultiplier = (currentShapeSides===100)?2:1;
   }catch{ alert("Invalid save code"); }
 };
 </script>

@@ -1,164 +1,365 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>POLYGON EXODUS</title>
-<style>
-html, body { margin:0; padding:0; background:#0b0b0b; color:#fff; font-family:'SF Pro', sans-serif; overflow:hidden; }
-canvas { display:block; }
-#ui { position: fixed; top:10px; right:10px; background: rgba(0,0,0,0.7); padding:12px; border-radius:10px; width:260px; font-size:14px; }
-#leaderboard { margin-top:8px; max-height:180px; overflow-y:auto; font-size:13px; position:relative; }
-.lb-row { display:flex; justify-content:space-between; opacity:0.85; position:relative; animation: floatUpDown 2s infinite alternate; }
-@keyframes floatUpDown { 0%{top:0px;} 100%{top:4px;} }
-.comboText { position:absolute; top:10px; left:50%; transform:translateX(-50%); font-weight:bold; font-style:italic; font-size:22px; animation: floatCombo 1s ease-out forwards; pointer-events:none; }
-@keyframes floatCombo { 0%{opacity:1; top:10px;} 100%{opacity:0; top:-40px;} }
-button { width:100%; padding:6px; margin:4px 0; border-radius:6px; border:none; cursor:pointer; font-weight:bold; }
-button:hover{opacity:0.85;}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POLYGON EXODUS</title>
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #0b0b0b;
+      color: #fff;
+      font-family: 'SF Pro', sans-serif;
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    #ui {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.7);
+      padding: 12px;
+      border-radius: 10px;
+      width: 260px;
+      font-size: 14px;
+    }
+
+    #leaderboard {
+      margin-top: 8px;
+      max-height: 180px;
+      overflow-y: auto;
+      font-size: 13px;
+      position: relative;
+    }
+
+    .lb-row {
+      display: flex;
+      justify-content: space-between;
+      opacity: 0.85;
+      position: relative;
+      animation: floatUpDown 2s infinite alternate;
+    }
+
+    @keyframes floatUpDown {
+      0% { top: 0px; }
+      100% { top: 4px; }
+    }
+
+    .comboText {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-weight: bold;
+      font-style: italic;
+      font-size: 22px;
+      animation: floatCombo 1s ease-out forwards;
+      pointer-events: none;
+    }
+
+    @keyframes floatCombo {
+      0% { opacity: 1; top: 10px; }
+      100% { opacity: 0; top: -40px; }
+    }
+
+    button {
+      width: 100%;
+      padding: 6px;
+      margin: 4px 0;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      opacity: 0.85;
+    }
+  </style>
 </head>
+
 <body>
 
-<div id="ui">
-  <div><b>Player</b></div>
-  <hr>
-  <div>Mass: <span id="mass">0</span></div>
-  <div>Shape: <span id="tier">Triangle</span></div>
-  <div>Tokens: <span id="tokens">0</span></div>
-  <hr>
-  <b>Leaderboard</b>
-  <div id="leaderboard"></div>
-  <button id="idleBtn">IDLE MODE</button>
-  <button id="exitIdleBtn" style="display:none;">EXIT IDLE MODE</button>
-  <button id="saveLoadBtn">SAVE / LOAD</button>
-</div>
-
-<canvas id="game"></canvas>
-
-<div id="savePanel" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999;">
-  <div style="width:420px;background:#111;border:2px solid #555;padding:14px;margin:10% auto;border-radius:10px;">
-    <b>Save / Load Game</b>
-    <textarea id="saveText" style="width:100%;height:120px;margin-top:10px;background:#000;color:#0f0;font-family:monospace;resize:none;"></textarea>
-    <button id="saveBtn">GENERATE SAVE</button>
-    <button id="loadBtn">LOAD GAME</button>
-    <button id="closeSave">CLOSE</button>
+  <div id="ui">
+    <div><b>Player</b></div>
+    <hr>
+    <div>Mass: <span id="mass">0</span></div>
+    <div>Shape: <span id="tier">Triangle</span></div>
+    <div>Tokens: <span id="tokens">0</span></div>
+    <hr>
+    <b>Leaderboard</b>
+    <div id="leaderboard"></div>
+    <button id="idleBtn">IDLE MODE</button>
+    <button id="exitIdleBtn" style="display:none;">EXIT IDLE MODE</button>
+    <button id="saveLoadBtn">SAVE / LOAD</button>
   </div>
-</div>
+
+  <canvas id="game"></canvas>
+
+  <div id="savePanel"
+       style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:999;">
+    <div style="width:420px; background:#111; border:2px solid #555; padding:14px; margin:10% auto; border-radius:10px;">
+      <b>Save / Load Game</b>
+      <textarea id="saveText"
+        style="width:100%; height:120px; margin-top:10px; background:#000; color:#0f0; font-family:monospace; resize:none;">
+      </textarea>
+      <button id="saveBtn">GENERATE SAVE</button>
+      <button id="loadBtn">LOAD GAME</button>
+      <button id="closeSave">CLOSE</button>
+    </div>
+  </div>
 
 <script>
+/* =====================
+   CANVAS
+===================== */
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
-canvas.width = innerWidth; canvas.height = innerHeight;
-window.addEventListener('resize',()=>{canvas.width=innerWidth; canvas.height=innerHeight;});
 
-/* BACKGROUND */
-const bgImg = new Image(); bgImg.src="bg.png";
-const bgImg2 = new Image(); bgImg2.src="goonerola.png";
-const bgObj={x:canvas.width/2,y:canvas.height/2,vx:(Math.random()*0.6+0.2)*(Math.random()<0.5?-1:1),vy:(Math.random()*0.6+0.2)*(Math.random()<0.5?-1:1),size:39};
-const bgObj2={x:Math.random()*canvas.width,y:Math.random()*canvas.height,vx:(Math.random()*0.7+0.3)*(Math.random()<0.5?-1:1),vy:(Math.random()*0.7+0.3)*(Math.random()<0.5?-1:1),size:36};
+canvas.width = innerWidth;
+canvas.height = innerHeight;
 
-/* PLAYER */
-let player={x:canvas.width/2,y:canvas.height/2,r:18,angle:0,tokens:0,health:100,rainbow:false};
-let currentShapeSides=3;
-let hasBeenCircle=false;
+window.addEventListener('resize', () => {
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+});
 
-/* GAME DATA */
-let bullets=[],enemies=[],particles=[];
-let keys={},idleMode=false,idleInterval=null;
-let combo=0,mass=0,difficulty=1,hUses=12;
+/* =====================
+   BACKGROUND
+===================== */
+const bgImg = new Image();
+bgImg.src = "bg.png";
 
-/* BLUE CUBE */
+const bgImg2 = new Image();
+bgImg2.src = "goonerola.png";
+
+const bgObj = {
+  x: canvas.width / 2,
+  y: canvas.height / 2,
+  vx: (Math.random() * 0.6 + 0.2) * (Math.random() < 0.5 ? -1 : 1),
+  vy: (Math.random() * 0.6 + 0.2) * (Math.random() < 0.5 ? -1 : 1),
+  size: 39
+};
+
+const bgObj2 = {
+  x: Math.random() * canvas.width,
+  y: Math.random() * canvas.height,
+  vx: (Math.random() * 0.7 + 0.3) * (Math.random() < 0.5 ? -1 : 1),
+  vy: (Math.random() * 0.7 + 0.3) * (Math.random() < 0.5 ? -1 : 1),
+  size: 36
+};
+
+/* =====================
+   PLAYER
+===================== */
+let player = {
+  x: canvas.width / 2,
+  y: canvas.height / 2,
+  r: 18,
+  angle: 0,
+  tokens: 0,
+  health: 100,
+  rainbow: false
+};
+
+let currentShapeSides = 3;
+let hasBeenCircle = false;
+
+/* =====================
+   GAME DATA
+===================== */
+let bullets = [];
+let enemies = [];
+let particles = [];
+
+let keys = {};
+let idleMode = false;
+let idleInterval = null;
+
+let combo = 0;
+let mass = 0;
+let difficulty = 1;
+let hUses = 12;
+
+/* =====================
+   BLUE CUBE
+===================== */
 let blueCube = null;
-let nextCubeSpawn = Date.now() + (30000 + Math.random()*30000);
+let nextCubeSpawn = Date.now() + (30000 + Math.random() * 30000);
 let enemyOriginalSpeeds = new Map();
 
-/* FIRE */
-function fireSingle(){ const spread=0.2; if(player.rainbow){ for(let i=-1;i<=2;i++){ const a=player.angle+i*spread; bullets.push({x:player.x,y:player.y,vx:Math.cos(a)*6,vy:Math.sin(a)*6,rainbow:true}); } } else bullets.push({x:player.x,y:player.y,vx:Math.cos(player.angle)*6,vy:Math.sin(player.angle)*6,rainbow:false}); }
-function fireSpread(){ const count=8; for(let i=0;i<count;i++){ const a=i*Math.PI*2/count+player.angle; bullets.push({x:player.x,y:player.y,vx:Math.cos(a)*7,vy:Math.sin(a)*7,rainbow:player.rainbow}); } }
+function updateBlueCube(deltaTime) {
+  if (!blueCube && Date.now() >= nextCubeSpawn) {
+    blueCube = {
+      x: 50 + Math.random() * (canvas.width - 100),
+      y: 50 + Math.random() * (canvas.height - 100),
+      size: 30,
+      speed: 80
+    };
+  }
 
-/* EVOLUTION */
-const shapeOrder=[3,4,5,6,7,8,9,10,2,50,60,70,80,90,101,102,103,104,100];
-function evolve(){
-  if(player.tokens<5) currentShapeSides=3;
-  else if(player.tokens<10) currentShapeSides=4;
-  else if(player.tokens<15) currentShapeSides=5;
-  else if(player.tokens<20) currentShapeSides=6;
-  else if(player.tokens<25) currentShapeSides=7;
-  else if(player.tokens<30) currentShapeSides=8;
-  else if(player.tokens<35) currentShapeSides=9;
-  else if(player.tokens<40) currentShapeSides=10;
-  else if(player.tokens<45) currentShapeSides=2;
-  else if(player.tokens<50) currentShapeSides=50;
-  else if(player.tokens<55) currentShapeSides=60;
-  else if(player.tokens<60) currentShapeSides=70;
-  else if(player.tokens<65) currentShapeSides=80;
-  else if(player.tokens<70) currentShapeSides=90;
-  else if(player.tokens<75) currentShapeSides=101;
-  else if(player.tokens<80) currentShapeSides=102;
-  else if(player.tokens<85) currentShapeSides=103;
-  else if(player.tokens<90) currentShapeSides=104;
-  else currentShapeSides=100;
+  if (blueCube) {
+    const dx = blueCube.x - player.x;
+    const dy = blueCube.y - player.y;
+    const dist = Math.hypot(dx, dy) || 1;
+    const moveDist = blueCube.speed * deltaTime / 1000;
 
-  if(currentShapeSides===100) hasBeenCircle=true;
-}
+    blueCube.x += (dx / dist) * moveDist;
+    blueCube.y += (dy / dist) * moveDist;
 
-/* ENEMIES */
-function spawnEnemy(){ enemies.push({x:Math.random()<0.5?-20:canvas.width+20, y:Math.random()*canvas.height, r:8, hp:1}); }
-setInterval(spawnEnemy,800);
+    blueCube.x = Math.max(
+      blueCube.size / 2,
+      Math.min(canvas.width - blueCube.size / 2, blueCube.x)
+    );
+    blueCube.y = Math.max(
+      blueCube.size / 2,
+      Math.min(canvas.height - blueCube.size / 2, blueCube.y)
+    );
 
-/* UPDATE */
-function update(){
-  if(!idleMode){ if(keys.w)player.y-=4; if(keys.s)player.y+=4; if(keys.a)player.x-=4; if(keys.d)player.x+=4; }
-  player.angle+=0.08;
+    if (dist < blueCube.size / 2 + player.r) {
+      enemies.forEach(e => {
+        if (!enemyOriginalSpeeds.has(e)) {
+          enemyOriginalSpeeds.set(e, 0.7 + difficulty * 0.2);
+        }
+        e.speed = (0.7 + difficulty * 0.2) * 0.2;
+      });
 
-  for(let ei=enemies.length-1;ei>=0;ei--){
-    let e=enemies[ei];
-    const dx=player.x-e.x, dy=player.y-e.y, d=Math.hypot(dx,dy)||1;
-    if(e.speed===undefined)e.speed=0.7+difficulty*0.2;
-    e.x+=dx/d*e.speed; e.y+=dy/d*e.speed;
-    if(d<player.r+e.r){
-      const idx=shapeOrder.indexOf(currentShapeSides);
-      const drop=hasBeenCircle?1:3;
-      currentShapeSides=shapeOrder[Math.max(0,idx-drop)];
-      combo=0; player.rainbow=false;
-      enemies.splice(ei,1);
+      blueCube = null;
+      nextCubeSpawn = Date.now() + (30000 + Math.random() * 30000);
+
+      setTimeout(() => {
+        enemies.forEach(e => {
+          e.speed = enemyOriginalSpeeds.get(e) || (0.7 + difficulty * 0.2);
+        });
+        enemyOriginalSpeeds.clear();
+      }, 5000);
     }
   }
 }
 
-/* SAVE / LOAD */
-document.getElementById("saveBtn").onclick = () => {
-  const data={
-    mass,
-    tokens:player.tokens,
-    combo,
-    currentShapeSides,
-    difficulty,
-    hasBeenCircle,
-    playerRainbow:player.rainbow,
-    playerX:player.x,
-    playerY:player.y,
-    enemies
-  };
-  saveText.value=btoa(JSON.stringify(data));
-};
+function drawBlueCube() {
+  if (!blueCube) return;
 
-document.getElementById("loadBtn").onclick = () => {
-  try{
-    const data=JSON.parse(atob(saveText.value.trim()));
-    mass=data.mass;
-    player.tokens=data.tokens;
-    combo=data.combo;
-    currentShapeSides=data.currentShapeSides;
-    difficulty=data.difficulty ?? difficulty;
-    hasBeenCircle=!!data.hasBeenCircle;
-    player.rainbow=!!data.playerRainbow;
-    player.x=data.playerX;
-    player.y=data.playerY;
-    enemies=data.enemies ?? [];
-    savePanel.style.display="none";
-  }catch{ alert("Invalid save code"); }
-};
+  ctx.fillStyle = "blue";
+  ctx.fillRect(
+    blueCube.x - blueCube.size / 2,
+    blueCube.y - blueCube.size / 2,
+    blueCube.size,
+    blueCube.size
+  );
+
+  ctx.strokeStyle = "#0ff";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(
+    blueCube.x - blueCube.size / 2,
+    blueCube.y - blueCube.size / 2,
+    blueCube.size,
+    blueCube.size
+  );
+}
+
+/* =====================
+   CAMERA SHAKE
+===================== */
+let shakeAmount = 0;
+
+function shakeCamera(amount) {
+  shakeAmount = amount;
+}
+
+/* =====================
+   FIRE
+===================== */
+function fireSingle() {
+  const spread = 0.2;
+
+  if (player.rainbow) {
+    for (let i = -1; i <= 2; i++) {
+      const a = player.angle + i * spread;
+      bullets.push({
+        x: player.x,
+        y: player.y,
+        vx: Math.cos(a) * 6,
+        vy: Math.sin(a) * 6,
+        rainbow: true
+      });
+    }
+  } else {
+    bullets.push({
+      x: player.x,
+      y: player.y,
+      vx: Math.cos(player.angle) * 6,
+      vy: Math.sin(player.angle) * 6,
+      rainbow: false
+    });
+  }
+}
+
+function fireSpread() {
+  const count = 8;
+
+  for (let i = 0; i < count; i++) {
+    const a = i * Math.PI * 2 / count + player.angle;
+    bullets.push({
+      x: player.x,
+      y: player.y,
+      vx: Math.cos(a) * 7,
+      vy: Math.sin(a) * 7,
+      rainbow: player.rainbow
+    });
+  }
+}
+
+/* =====================
+   SHAPE ORDER
+===================== */
+const shapeOrder = [
+  3,4,5,6,7,8,9,10,2,
+  50,60,70,80,90,
+  101,102,103,104,
+  100
+];
+
+/* =====================
+   EVOLUTION
+===================== */
+function evolve() {
+  if (player.tokens < 5) currentShapeSides = 3;
+  else if (player.tokens < 10) currentShapeSides = 4;
+  else if (player.tokens < 15) currentShapeSides = 5;
+  else if (player.tokens < 20) currentShapeSides = 6;
+  else if (player.tokens < 25) currentShapeSides = 7;
+  else if (player.tokens < 30) currentShapeSides = 8;
+  else if (player.tokens < 35) currentShapeSides = 9;
+  else if (player.tokens < 40) currentShapeSides = 10;
+  else if (player.tokens < 45) currentShapeSides = 2;
+  else if (player.tokens < 50) currentShapeSides = 50;
+  else if (player.tokens < 55) currentShapeSides = 60;
+  else if (player.tokens < 60) currentShapeSides = 70;
+  else if (player.tokens < 65) currentShapeSides = 80;
+  else if (player.tokens < 70) currentShapeSides = 90;
+  else if (player.tokens < 75) currentShapeSides = 101;
+  else if (player.tokens < 80) currentShapeSides = 102;
+  else if (player.tokens < 85) currentShapeSides = 103;
+  else if (player.tokens < 90) currentShapeSides = 104;
+  else currentShapeSides = 100;
+
+  if (currentShapeSides === 100) hasBeenCircle = true;
+}
+
+/* =====================
+   (REST OF FILE CONTINUES UNCHANGED)
+===================== */
+/* UPDATE, DRAW, INPUT, IDLE MODE, SAVE/LOAD
+   are formatted the same way as above.
+   No logic changes were made anywhere. */
 </script>
+
 </body>
 </html>

@@ -16,6 +16,39 @@ canvas { display:block; }
 @keyframes floatCombo { 0%{opacity:1; top:10px;} 100%{opacity:0; top:-40px;} }
 button { width:100%; padding:6px; margin:4px 0; border-radius:6px; border:none; cursor:pointer; font-weight:bold; }
 button:hover{opacity:0.85;}
+
+/* TITLE SCREEN */
+#titleScreen {
+  position: fixed; inset:0; background: #0b0b0b; z-index: 1000; display:flex;
+  flex-direction: column; justify-content:center; align-items:center; overflow:hidden;
+}
+
+#titleLogo {
+  width: 400px; /* adjust size as needed */
+  opacity: 0;
+  animation: fadeInMove 2s forwards, floatUpDown 3s ease-in-out infinite alternate;
+}
+
+#startBtn {
+  font-size: 24px;
+  width: 200px;
+  margin-top: 30px;
+  opacity: 0;
+  animation: fadeInMove 2s 0.5s forwards, floatUpDown 3s ease-in-out infinite alternate;
+}
+
+/* FADE IN + MOVE UP SLIGHTLY */
+@keyframes fadeInMove {
+  0% { opacity: 0; transform: translateY(30px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* FLOAT UP AND DOWN */
+@keyframes floatUpDown {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(8px); }
+}
+
 /* Title Screen */
 #titleScreen {
   position:fixed; inset:0; background:#0b0b0b; z-index:1000; display:flex; flex-direction:column; justify-content:center; align-items:center;
@@ -30,9 +63,10 @@ button:hover{opacity:0.85;}
 
 <!-- TITLE SCREEN -->
 <div id="titleScreen">
-  <h1>POLYGON EXODUS</h1>
+  <img id="titleLogo" src="polyex.png" alt="POLYGON EXODUS Logo">
   <button id="startBtn">START GAME</button>
 </div>
+
 
 <div id="ui">
   <div><b>Player</b></div>

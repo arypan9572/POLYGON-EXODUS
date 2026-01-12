@@ -93,7 +93,9 @@ button:hover{opacity:0.85;}
   <button id="saveLoadBtn">SAVE / LOAD</button>
 </div>
   
-<canvas id="transitionCanvas" style="position:fixed;inset:0;z-index:2000;pointer-events:none;"></canvas>
+<canvas id="transitionCanvas"
+  style="position:fixed;inset:0;z-index:1500;pointer-events:none;display:none;">
+</canvas>
 
 <canvas id="game"></canvas>
 
@@ -446,12 +448,7 @@ function pixelateTransition(callback){
 
     requestAnimationFrame(animate);
 }
-
-
-    animate();
-}
-
-
+  
 // START BUTTON CLICK
 document.getElementById('startBtn').onclick = ()=>{
     pixelateTransition(()=>{});

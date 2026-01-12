@@ -373,33 +373,68 @@ window.addEventListener('resize',()=>{transitionCanvas.width=innerWidth;transiti
 
 // PIXELATION FUNCTION
 function pixelateTransition(callback){
-    let size = 5; // starting pixel size
-    let direction = 1; // 1 = pixelate out, -1 = pixelate in
-    let alpha = 1;
+    transitionCanvas.style.display = "block";
+
+    const w = transitionCanvas.width;
+    const h = transitionCanvas.height;
+
+    // Capture current frame (title screen → black → game)
+    let source = ctx.getImageData(0, 0, w, h);
+
+    // pixel block sizes: 1 → 4 → 16 → 32 → 64
+    const sizes = [1, 2, 4, 8, 16, 32, 64];
+    let index = 0;
+    let expanding = true;
+
+    function draw(size){
+        tCtx.clearRect(0,0,w,h);
+
+        for(let y=0; y<h; y+=size){
+            for(let x=0; x<w; x+=size){
+
+                // pick ONE random pixel inside the block
+                const rx = x + Math.floor(Math.random()*size);
+                const ry = y + Math.floor(Math.random()*size);
+                const i = ((ry*w + rx) * 4);
+
+                const r = source.data[i];
+                const g = source.data[i+1];
+                const b = source.data[i+2];
+
+                tCtx.fillStyle = `rgb(${r},${g},${b})`;
+                tCtx.fillRect(x, y, size, size);
+            }
+        }
+    }
 
     function animate(){
-        tCtx.clearRect(0,0,transitionCanvas.width,transitionCanvas.height);
+        draw(sizes[index]);
 
-        const step = Math.max(1, size);
-        for(let y=0; y<transitionCanvas.height; y+=step){
-            for(let x=0; x<transitionCanvas.width; x+=step){
-                tCtx.fillStyle = `rgba(0,0,0,${alpha})`;
-                tCtx.fillRect(x,y,step,step);
+        if(expanding){
+            index++;
+            if(index >= sizes.length){
+                expanding = false;
+                index = sizes.length - 1;
+
+                // SWITCH TO GAME HERE
+                if(callback) callback();
+                source = ctx.getImageData(0, 0, w, h);
+            }
+        } else {
+            index--;
+            if(index < 0){
+                tCtx.clearRect(0,0,w,h);
+                transitionCanvas.style.display = "none";
+                return;
             }
         }
 
-        size += direction*2;
-        if(direction===1 && size >= 50){
-            direction = -1;
-            if(callback) callback(); // switch to game
-        } else if(direction===-1 && size <= 5){
-            tCtx.clearRect(0,0,transitionCanvas.width,transitionCanvas.height);
-            return;
-        }
         requestAnimationFrame(animate);
     }
+
     animate();
 }
+
 
 // START BUTTON CLICK
 document.getElementById('startBtn').onclick = ()=>{

@@ -378,67 +378,75 @@ function pixelateTransition(callback){
     const w = transitionCanvas.width;
     const h = transitionCanvas.height;
 
-    // FORCE ONE GAME FRAME SO PIXELS EXIST
-    gamePaused = false;
-    update();
-    draw();
-    gamePaused = true;
+    // STEP 1: DRAW TITLE SCREEN INTO TRANSITION CANVAS
+    tCtx.fillStyle = "#0b0b0b";
+    tCtx.fillRect(0,0,w,h);
 
-    let source = ctx.getImageData(0, 0, w, h);
+    // draw logo + button snapshot
+    const title = document.getElementById("titleScreen");
+    const rect = title.getBoundingClientRect();
 
-    const sizes = [1, 2, 4, 8, 16, 32, 64];
-    let index = 0;
-    let expanding = true;
+    tCtx.drawImage(
+        canvas,
+        0,0,w,h
+    );
 
-    function drawPixels(size){
+    // STEP 2: capture TITLE pixels
+    let source = tCtx.getImageData(0,0,w,h);
+
+    let start = null;
+    const duration = 700; // ms
+    let switched = false;
+
+    function drawPixels(block){
         tCtx.clearRect(0,0,w,h);
 
-        for(let y=0; y<h; y+=size){
-            for(let x=0; x<w; x+=size){
-
-                const rx = x + Math.floor(Math.random()*size);
-                const ry = y + Math.floor(Math.random()*size);
-                const i = ((ry*w + rx) * 4);
-
-                const r = source.data[i];
-                const g = source.data[i+1];
-                const b = source.data[i+2];
-
-                tCtx.fillStyle = `rgb(${r},${g},${b})`;
-                tCtx.fillRect(x, y, size, size);
+        for(let y=0;y<h;y+=block){
+            for(let x=0;x<w;x+=block){
+                const i=((y*w+x)*4);
+                const r=source.data[i];
+                const g=source.data[i+1];
+                const b=source.data[i+2];
+                tCtx.fillStyle=`rgb(${r},${g},${b})`;
+                tCtx.fillRect(x,y,block,block);
             }
         }
     }
 
-    function animate(){
-        drawPixels(sizes[index]);
+    function animate(ts){
+        if(!start) start = ts;
+        const t = (ts-start)/duration;
 
-        if(expanding){
-            index++;
-            if(index >= sizes.length){
-                expanding = false;
-                index = sizes.length - 1;
+        // smooth curve
+        const eased = t<0.5
+          ? 2*t*t
+          : 1-Math.pow(-2*t+2,2)/2;
 
-                // START GAME FOR REAL
-                gamePaused = false;
-                if(callback) callback();
+        const block = Math.max(1, Math.floor(eased*64));
 
-                // CAPTURE LIVE GAME FRAME
-                update();
-                draw();
-                source = ctx.getImageData(0, 0, w, h);
-            }
+        drawPixels(block);
+
+        // SWITCH TO GAME EXACTLY ONCE
+        if(t>0.5 && !switched){
+            switched = true;
+            document.getElementById("titleScreen").style.display="none";
+            gamePaused = false;
+            update();
+            draw();
+            source = ctx.getImageData(0,0,w,h);
+            if(callback) callback();
+        }
+
+        if(t<1){
+            requestAnimationFrame(animate);
         } else {
-            index--;
-            if(index < 0){
-                tCtx.clearRect(0,0,w,h);
-                transitionCanvas.style.display = "none";
-                return;
-            }
+            transitionCanvas.style.display="none";
         }
-
-        requestAnimationFrame(animate);
     }
+
+    requestAnimationFrame(animate);
+}
+
 
     animate();
 }
@@ -446,8 +454,8 @@ function pixelateTransition(callback){
 
 // START BUTTON CLICK
 document.getElementById('startBtn').onclick = ()=>{
-    document.getElementById('titleScreen').style.display="none"; 
-    pixelateTransition(()=>{ gamePaused=false; }); 
+    pixelateTransition(()=>{});
+
 };
 
 </script>

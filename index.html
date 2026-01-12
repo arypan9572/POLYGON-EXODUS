@@ -378,21 +378,24 @@ function pixelateTransition(callback){
     const w = transitionCanvas.width;
     const h = transitionCanvas.height;
 
-    // Capture current frame (title screen → black → game)
+    // FORCE ONE GAME FRAME SO PIXELS EXIST
+    gamePaused = false;
+    update();
+    draw();
+    gamePaused = true;
+
     let source = ctx.getImageData(0, 0, w, h);
 
-    // pixel block sizes: 1 → 4 → 16 → 32 → 64
     const sizes = [1, 2, 4, 8, 16, 32, 64];
     let index = 0;
     let expanding = true;
 
-    function draw(size){
+    function drawPixels(size){
         tCtx.clearRect(0,0,w,h);
 
         for(let y=0; y<h; y+=size){
             for(let x=0; x<w; x+=size){
 
-                // pick ONE random pixel inside the block
                 const rx = x + Math.floor(Math.random()*size);
                 const ry = y + Math.floor(Math.random()*size);
                 const i = ((ry*w + rx) * 4);
@@ -408,7 +411,7 @@ function pixelateTransition(callback){
     }
 
     function animate(){
-        draw(sizes[index]);
+        drawPixels(sizes[index]);
 
         if(expanding){
             index++;
@@ -416,8 +419,13 @@ function pixelateTransition(callback){
                 expanding = false;
                 index = sizes.length - 1;
 
-                // SWITCH TO GAME HERE
+                // START GAME FOR REAL
+                gamePaused = false;
                 if(callback) callback();
+
+                // CAPTURE LIVE GAME FRAME
+                update();
+                draw();
                 source = ctx.getImageData(0, 0, w, h);
             }
         } else {

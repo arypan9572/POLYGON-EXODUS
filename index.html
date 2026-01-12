@@ -7,6 +7,7 @@
 <style>
 html, body { margin:0; padding:0; background:#0b0b0b; color:#fff; font-family:'SF Pro', sans-serif; overflow:hidden; }
 canvas { display:block; }
+/* UI */
 #ui { position: fixed; top:10px; right:10px; background: rgba(0,0,0,0.7); padding:12px; border-radius:10px; width:260px; font-size:14px; }
 #leaderboard { margin-top:8px; max-height:180px; overflow-y:auto; font-size:13px; position:relative; }
 .lb-row { display:flex; justify-content:space-between; opacity:0.85; position:relative; animation: floatUpDown 2s infinite alternate; }
@@ -15,13 +16,23 @@ canvas { display:block; }
 @keyframes floatCombo { 0%{opacity:1; top:10px;} 100%{opacity:0; top:-40px;} }
 button { width:100%; padding:6px; margin:4px 0; border-radius:6px; border:none; cursor:pointer; font-weight:bold; }
 button:hover{opacity:0.85;}
+/* Title Screen */
+#titleScreen {
+  position:fixed; inset:0; background:#0b0b0b; z-index:1000; display:flex; flex-direction:column; justify-content:center; align-items:center;
+}
+#titleScreen h1 { font-size:64px; margin:0; font-weight:bold; color:#4caf50; text-shadow:0 0 10px #0f0,0 0 20px #0f0; }
+#titleScreen button { font-size:24px; width:200px; margin-top:30px; }
 <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
-<!-- Or for a PNG file -->
 <link rel="shortcut icon" type="image/png" href="favicon.png">
-
 </style>
 </head>
 <body>
+
+<!-- TITLE SCREEN -->
+<div id="titleScreen">
+  <h1>POLYGON EXODUS</h1>
+  <button id="startBtn">START GAME</button>
+</div>
 
 <div id="ui">
   <div><b>Player</b></div>
@@ -126,7 +137,6 @@ function fireSpread(){ const count=8; for(let i=0;i<count;i++){ const a=i*Math.P
 let pixelated=false; // <<< tracks pixelated shapes
 const shapeOrder=[3,4,5,6,7,8,9,10,2,50,60,70,80,90,101,102,103,104,100];
 function evolve(){
-  // Normal evolution
   if(!pixelated){
     if(player.tokens<5) currentShapeSides=3;
     else if(player.tokens<10) currentShapeSides=4;
@@ -147,15 +157,12 @@ function evolve(){
     else if(player.tokens<85) currentShapeSides=103;
     else if(player.tokens<90) currentShapeSides=104;
     else currentShapeSides=100;
-    if(currentShapeSides===100) pixelated=true; // Begin pixelated cycle after circle
+    if(currentShapeSides===100) pixelated=true;
   } else { 
-    // Pixelated evolution
-    const pixelOrder=[3,4,5,6,7,8,9,10,100]; // simplified pixelated cycle
+    const pixelOrder=[3,4,5,6,7,8,9,10,100];
     const idx = pixelOrder.indexOf(currentShapeSides);
     currentShapeSides = pixelOrder[Math.min(idx+1,pixelOrder.length-1)];
   }
-
-  // Bullet multiplier for circle
   bulletMultiplier = (currentShapeSides===100)?2:1;
 }
 
@@ -261,7 +268,7 @@ else if(s===103){ ctx.moveTo(0,-player.r/2); ctx.bezierCurveTo(player.r,-player.
 else if(s===104){ ctx.moveTo(0,-player.r); ctx.lineTo(player.r/2,0); ctx.lineTo(0,player.r); ctx.lineTo(-player.r/2,0); ctx.closePath(); } ctx.fill(); ctx.restore();}
 
 /* LOOP */
-let gamePaused=false;
+let gamePaused=true;
 function loop(){ requestAnimationFrame(loop); if(!gamePaused){ update(); draw(); } }
 loop();
 
@@ -308,6 +315,12 @@ document.getElementById("loadBtn").onclick = () => {
     gamePaused=false;
     bulletMultiplier = (currentShapeSides===100)?2:1;
   }catch{ alert("Invalid save code"); }
+};
+
+/* TITLE SCREEN BUTTON */
+document.getElementById('startBtn').onclick = () => {
+  document.getElementById('titleScreen').style.display='none';
+  gamePaused=false;
 };
 </script>
 </body>

@@ -4,9 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>POLYGON EXODUS</title>
+
+<!-- FAVICONS -->
+<link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+<link rel="shortcut icon" type="image/png" href="favicon.png">
+
+<!-- SF Pro Display CDN -->
+<link href="https://fonts.cdnfonts.com/css/sf-pro-display" rel="stylesheet">
+
 <style>
 html, body { margin:0; padding:0; background:#0b0b0b; color:#fff; font-family:'SF Pro', sans-serif; overflow:hidden; }
 canvas { display:block; }
+
 /* UI */
 #ui { position: fixed; top:10px; right:10px; background: rgba(0,0,0,0.7); padding:12px; border-radius:10px; width:260px; font-size:14px; }
 #leaderboard { margin-top:8px; max-height:180px; overflow-y:auto; font-size:13px; position:relative; }
@@ -16,6 +25,29 @@ canvas { display:block; }
 @keyframes floatCombo { 0%{opacity:1; top:10px;} 100%{opacity:0; top:-40px;} }
 button { width:100%; padding:6px; margin:4px 0; border-radius:6px; border:none; cursor:pointer; font-weight:bold; }
 button:hover{opacity:0.85;}
+
+/* ===== TITLE → GAME FADE TRANSITION ===== */
+#titleScreen.fadeOut {
+  animation: titleFadeOut 1.2s forwards;
+}
+
+#titleScreen.fadeOut * {
+  animation-play-state: paused !important;
+}
+
+@keyframes titleFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+#game {
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+#game.fadeIn {
+  opacity: 1;
+}
 
 /* TITLE SCREEN */
 #titleScreen {
@@ -58,16 +90,6 @@ button:hover{opacity:0.85;}
   0% { transform: translateY(0); }
   100% { transform: translateY(35px); } /* button floats farther and at a different rate */
 }
-
-
-/* Title Screen */
-#titleScreen {
-  position:fixed; inset:0; background:#0b0b0b; z-index:1000; display:flex; flex-direction:column; justify-content:center; align-items:center;
-}
-#titleScreen h1 { font-size:64px; margin:0; font-weight:bold; color:#4caf50; text-shadow:0 0 10px #0f0,0 0 20px #0f0; }
-#titleScreen button { font-size:24px; width:200px; margin-top:30px; }
-<link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
-<link rel="shortcut icon" type="image/png" href="favicon.png">
 </style>
 </head>
 <body>
@@ -77,7 +99,6 @@ button:hover{opacity:0.85;}
   <img id="titleLogo" src="polyex.png" alt="POLYGON EXODUS Logo">
   <button id="startBtn">START GAME</button>
 </div>
-
 
 <div id="ui">
   <div><b>Player</b></div>
@@ -92,7 +113,7 @@ button:hover{opacity:0.85;}
   <button id="exitIdleBtn" style="display:none;">EXIT IDLE MODE</button>
   <button id="saveLoadBtn">SAVE / LOAD</button>
 </div>
-  
+
 <canvas id="transitionCanvas"
   style="position:fixed;inset:0;z-index:1500;pointer-events:none;display:none;">
 </canvas>
@@ -110,28 +131,33 @@ button:hover{opacity:0.85;}
 </div>
 
 <script>
+// --------------------
+// FULL GAME LOGIC
+// --------------------
+
+// Canvas setup
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 canvas.width = innerWidth; canvas.height = innerHeight;
 window.addEventListener('resize',()=>{canvas.width=innerWidth; canvas.height=innerHeight;});
 
-/* BACKGROUND */
+// Background images
 const bgImg = new Image(); bgImg.src="bg.png";
 const bgImg2 = new Image(); bgImg2.src="goonerola.png";
 const bgObj={x:canvas.width/2,y:canvas.height/2,vx:(Math.random()*0.6+0.2)*(Math.random()<0.5?-1:1),vy:(Math.random()*0.6+0.2)*(Math.random()<0.5?-1:1),size:39};
 const bgObj2={x:Math.random()*canvas.width,y:Math.random()*canvas.height,vx:(Math.random()*0.7+0.3)*(Math.random()<0.5?-1:1),vy:(Math.random()*0.7+0.3)*(Math.random()<0.5?-1:1),size:36};
 
-/* PLAYER */
+// Player
 let player={x:canvas.width/2,y:canvas.height/2,r:18,angle:0,tokens:0,health:100,rainbow:false};
 let currentShapeSides=3;
-let bulletMultiplier=1; // <<< Added to double bullets for circle
+let bulletMultiplier=1;
 
-/* GAME DATA */
+// Game data
 let bullets=[],enemies=[],particles=[];
 let keys={},idleMode=false,idleInterval=null;
 let combo=0,mass=0,difficulty=1,hUses=12;
 
-/* BLUE CUBE */
+// Blue Cube
 let blueCube = null;
 let nextCubeSpawn = Date.now() + (30000 + Math.random()*30000);
 let enemyOriginalSpeeds = new Map();
@@ -167,14 +193,14 @@ function drawBlueCube(){
   ctx.strokeRect(blueCube.x-blueCube.size/2, blueCube.y-blueCube.size/2, blueCube.size, blueCube.size);
 }
 
-/* CAMERA SHAKE */
+// Camera shake
 let shakeAmount=0;
 function shakeCamera(amount){ shakeAmount=amount; }
 
-/* FIRE */
+// Fire functions
 function fireSingle(){ 
   const spread=0.2; 
-  let shots = bulletMultiplier; // <<< Circle doubles bullets
+  let shots = bulletMultiplier; 
   for(let s=0;s<shots;s++){
     if(player.rainbow){ for(let i=-1;i<=2;i++){ const a=player.angle+i*spread; bullets.push({x:player.x,y:player.y,vx:Math.cos(a)*6,vy:Math.sin(a)*6,rainbow:true}); } }
     else bullets.push({x:player.x,y:player.y,vx:Math.cos(player.angle)*6,vy:Math.sin(player.angle)*6,rainbow:false});
@@ -182,8 +208,8 @@ function fireSingle(){
 }
 function fireSpread(){ const count=8; for(let i=0;i<count;i++){ const a=i*Math.PI*2/count+player.angle; bullets.push({x:player.x,y:player.y,vx:Math.cos(a)*7,vy:Math.sin(a)*7,rainbow:player.rainbow}); } }
 
-/* EVOLUTION */
-let pixelated=false; // <<< tracks pixelated shapes
+// Evolution
+let pixelated=false; 
 const shapeOrder=[3,4,5,6,7,8,9,10,2,50,60,70,80,90,101,102,103,104,100];
 function evolve(){
   if(!pixelated){
@@ -215,21 +241,21 @@ function evolve(){
   bulletMultiplier = (currentShapeSides===100)?2:1;
 }
 
-/* ENEMIES */
+// Enemies
 function spawnEnemy(){ enemies.push({x:Math.random()<0.5?-20:canvas.width+20, y:Math.random()*canvas.height, r:8, hp:1}); }
 setInterval(spawnEnemy,800);
 setInterval(()=>{hUses=12;},60000);
 
-/* EXPLOSION */
+// Explosions
 function createExplosion(x,y){ for(let i=0;i<12;i++){ particles.push({x,y,r:Math.random()*4+2,vx:(Math.random()-0.5)*5,vy:(Math.random()-0.5)*5,alpha:1}); } }
 
-/* COMBO */
+// Combos
 function showCombo(n){ const d=document.createElement('div'); d.className='comboText'; d.textContent='COMBO x'+n; d.style.color=player.rainbow?`hsl(${Date.now()%360},100%,50%)`:'#fff'; document.body.appendChild(d); setTimeout(()=>d.remove(),1000); }
 
-/* SHAPE NAMES */
+// Shape names
 function getShapeName(sides){ switch(sides){ case 3: return "Triangle"; case 4: return "Square"; case 5: return "Pentagon"; case 6: return "Hexagon"; case 7: return "Heptagon"; case 8: return "Octagon"; case 9: return "Nonagon"; case 10: return "Decagon"; case 2: return "Digon"; case 50: return "4-sided Star"; case 60: return "6-sided Star"; case 70: return "7-sided Star"; case 80: return "5-point Star"; case 90: return "6-point Star"; case 101: return "Hexagram"; case 102: return "Heptagram"; case 103: return "Heart"; case 104: return "Diamond"; case 100: return "Circle"; default: return "Unknown"; }}
 
-/* UPDATE */
+// Update + draw functions
 function update(){
   const now = performance.now();
   if(!idleMode){ if(keys.w)player.y-=4; if(keys.s)player.y+=4; if(keys.a)player.x-=4; if(keys.d)player.x+=4; }
@@ -258,203 +284,193 @@ function update(){
   checkCircleMessage();
 }
 
-/* CIRCLE MESSAGE FUNCTION */
 let circleMessageShown = false;
 function checkCircleMessage(){
   if(currentShapeSides===100 && !circleMessageShown){
     circleMessageShown=true;
-    const msg=document.createElement('div');
-    msg.textContent="whoa, ur a circle now. HIGH FIVE! 😜";
-    msg.style.position='fixed';
-    msg.style.bottom='20px';
-    msg.style.left='50%';
-    msg.style.transform='translateX(-50%)';
-    msg.style.fontFamily="'SF Pro', sans-serif";
-    msg.style.fontWeight='600';
-    msg.style.fontStyle='italic';
-    msg.style.fontSize='22px';
-    msg.style.color='white';
-    msg.style.pointerEvents='none';
-    msg.style.zIndex='999';
-    msg.style.opacity='1';
+   
+    const msg = document.createElement('div');
+    msg.textContent = "whoa, ur a circle now. HIGH FIVE! 😜";
+    msg.style.position = 'fixed';
+    msg.style.bottom = '20px';
+    msg.style.left = '50%';
+    msg.style.transform = 'translateX(-50%)';
+    msg.style.fontFamily = "'SF Pro', sans-serif";
+    msg.style.fontWeight = '600';
+    msg.style.fontStyle = 'italic';
+    msg.style.fontSize = '22px';
+    msg.style.color = 'white';
+    msg.style.pointerEvents = 'none';
+    msg.style.zIndex = '999';
+    msg.style.opacity = '1';
     document.body.appendChild(msg);
 
-    let hue=0;
-    const rainbowInterval=setInterval(()=>{
-      hue=(hue+3)%360;
-      msg.style.color=`hsl(${hue},100%,50%)`;
-    },30);
+    let hue = 0;
+    const rainbowInterval = setInterval(() => {
+        hue = (hue + 3) % 360;
+        msg.style.color = `hsl(${hue},100%,50%)`;
+    }, 30);
 
-    setTimeout(()=>{
-      let opacity=1;
-      const fadeInterval=setInterval(()=>{
-        opacity-=0.02;
-        msg.style.opacity=opacity;
-        if(opacity<=0){ clearInterval(fadeInterval); clearInterval(rainbowInterval); msg.remove(); }
-      },30);
-    },5000);
-  }
+    setTimeout(() => {
+        let opacity = 1;
+        const fadeInterval = setInterval(() => {
+            opacity -= 0.02;
+            msg.style.opacity = opacity;
+            if(opacity <= 0){ 
+                clearInterval(fadeInterval); 
+                clearInterval(rainbowInterval); 
+                msg.remove(); 
+            }
+        }, 30);
+    }, 5000);
 }
 
-/* DRAW */
-function draw(){ ctx.save(); const shakeX=(Math.random()-0.5)*shakeAmount; const shakeY=(Math.random()-0.5)*shakeAmount; ctx.translate(shakeX,shakeY); shakeAmount*=0.9;
-ctx.fillStyle="rgba(11,11,11,0.25)"; ctx.fillRect(0,0,canvas.width,canvas.height);
-if(bgImg.complete){ctx.globalAlpha=0.25;ctx.drawImage(bgImg,bgObj.x-bgObj.size/2,bgObj.y-bgObj.size/2,bgObj.size,bgObj.size);ctx.globalAlpha=1;}
-if(bgImg2.complete){ctx.globalAlpha=0.25;ctx.drawImage(bgImg2,bgObj2.x-bgObj2.size/2,bgObj2.y-bgObj2.size/2,bgObj2.size,bgObj2.size);ctx.globalAlpha=1;}
-drawPlayerShape();
-bullets.forEach(b=>{ctx.fillStyle=b.rainbow?`hsl(${Date.now()%360},100%,50%)`:'#fff'; ctx.fillRect(b.x,b.y,3,3);});
-enemies.forEach(e=>{ctx.fillStyle='red';ctx.beginPath();ctx.arc(e.x,e.y,e.r,0,Math.PI*2);ctx.fill();});
-particles.forEach(p=>{ctx.fillStyle=`rgba(255,0,0,${p.alpha})`;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();});
-drawBlueCube(); ctx.restore();}
+// DRAW
+function draw(){ 
+    ctx.save(); 
+    const shakeX = (Math.random()-0.5)*shakeAmount; 
+    const shakeY = (Math.random()-0.5)*shakeAmount; 
+    ctx.translate(shakeX, shakeY); 
+    shakeAmount *= 0.9;
 
-/* DRAW PLAYER */
-function drawPlayerShape(){ const s=currentShapeSides; ctx.save(); ctx.translate(player.x,player.y); ctx.rotate(player.angle); ctx.fillStyle=player.rainbow?`hsl(${Date.now()%360},100%,50%)`:'#4caf50'; ctx.beginPath(); 
-if([3,4,5,6,7,8,9,10].includes(s)){ for(let i=0;i<s;i++){ const a=i*Math.PI*2/s-Math.PI/2; ctx.lineTo(Math.cos(a)*player.r,Math.sin(a)*player.r); } ctx.closePath(); } 
-else if(s===100){ctx.arc(0,0,player.r,0,Math.PI*2);} 
-else if(s===2){ctx.moveTo(-player.r,0); ctx.quadraticCurveTo(0,-player.r,player.r,0); ctx.quadraticCurveTo(0,player.r,-player.r,0); ctx.closePath();} 
-else if([50,60,70,80,90,101,102].includes(s)){ let spikes; switch(s){ case 50:spikes=4;break; case 60:spikes=6;break; case 70:spikes=7;break; case 80:spikes=5;break; case 90:spikes=6;break; case 101:spikes=6;break; case 102:spikes=7;break;} for(let i=0;i<spikes*2;i++){let r=i%2===0?player.r:player.r/2;if(s===101||s===102) r=i%2===0?player.r:player.r/3;const a=i*Math.PI/spikes-Math.PI/2; ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);} ctx.closePath();} 
-else if(s===103){ ctx.moveTo(0,-player.r/2); ctx.bezierCurveTo(player.r,-player.r*1.2,player.r*1.5,player.r/3,0,player.r); ctx.bezierCurveTo(-player.r*1.5,player.r/3,-player.r,-player.r*1.2,0,-player.r/2); ctx.closePath();} 
-else if(s===104){ ctx.moveTo(0,-player.r); ctx.lineTo(player.r/2,0); ctx.lineTo(0,player.r); ctx.lineTo(-player.r/2,0); ctx.closePath(); } ctx.fill(); ctx.restore();}
+    ctx.fillStyle="rgba(11,11,11,0.25)"; 
+    ctx.fillRect(0,0,canvas.width,canvas.height);
 
-/* LOOP */
-let gamePaused=true;
-function loop(){ requestAnimationFrame(loop); if(!gamePaused){ update(); draw(); } }
+    if(bgImg.complete){ ctx.globalAlpha=0.25; ctx.drawImage(bgImg, bgObj.x-bgObj.size/2, bgObj.y-bgObj.size/2, bgObj.size, bgObj.size); ctx.globalAlpha=1; }
+    if(bgImg2.complete){ ctx.globalAlpha=0.25; ctx.drawImage(bgImg2, bgObj2.x-bgObj2.size/2, bgObj2.y-bgObj2.size/2, bgObj2.size, bgObj2.size); ctx.globalAlpha=1; }
+
+    drawPlayerShape();
+    bullets.forEach(b => {
+        ctx.fillStyle = b.rainbow ? `hsl(${Date.now()%360},100%,50%)` : '#fff'; 
+        ctx.fillRect(b.x,b.y,3,3);
+    });
+    enemies.forEach(e => {
+        ctx.fillStyle='red';
+        ctx.beginPath();
+        ctx.arc(e.x,e.y,e.r,0,Math.PI*2);
+        ctx.fill();
+    });
+    particles.forEach(p => {
+        ctx.fillStyle=`rgba(255,0,0,${p.alpha})`;
+        ctx.beginPath();
+        ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+        ctx.fill();
+    });
+    drawBlueCube(); 
+    ctx.restore();
+}
+
+// DRAW PLAYER
+function drawPlayerShape(){ 
+    const s=currentShapeSides; 
+    ctx.save(); 
+    ctx.translate(player.x,player.y); 
+    ctx.rotate(player.angle); 
+    ctx.fillStyle=player.rainbow?`hsl(${Date.now()%360},100%,50%)`:'#4caf50'; 
+    ctx.beginPath(); 
+
+    if([3,4,5,6,7,8,9,10].includes(s)){ 
+        for(let i=0;i<s;i++){ 
+            const a=i*Math.PI*2/s-Math.PI/2; 
+            ctx.lineTo(Math.cos(a)*player.r,Math.sin(a)*player.r); 
+        } 
+        ctx.closePath(); 
+    } 
+    else if(s===100){ ctx.arc(0,0,player.r,0,Math.PI*2); } 
+    else if(s===2){ 
+        ctx.moveTo(-player.r,0); 
+        ctx.quadraticCurveTo(0,-player.r,player.r,0); 
+        ctx.quadraticCurveTo(0,player.r,-player.r,0); 
+        ctx.closePath();
+    } 
+    else if([50,60,70,80,90,101,102].includes(s)){ 
+        let spikes; 
+        switch(s){ case 50:spikes=4;break; case 60:spikes=6;break; case 70:spikes=7;break; case 80:spikes=5;break; case 90:spikes=6;break; case 101:spikes=6;break; case 102:spikes=7;break;} 
+        for(let i=0;i<spikes*2;i++){
+            const radius = (i % 2 === 0) ? player.r : player.r / 2;
+            const angle = i * Math.PI / spikes - Math.PI / 2;
+            ctx.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+        }
+        ctx.closePath();
+    } else if([103,104].includes(s)){
+        // Heart or Diamond
+        if(s===103){
+            ctx.moveTo(0, -player.r/2);
+            ctx.bezierCurveTo(player.r, -player.r*1.5, player.r*2, player.r/3, 0, player.r);
+            ctx.bezierCurveTo(-player.r*2, player.r/3, -player.r, -player.r*1.5, 0, -player.r/2);
+            ctx.closePath();
+        } else {
+            ctx.moveTo(0,-player.r);
+            ctx.lineTo(player.r,0);
+            ctx.lineTo(0,player.r);
+            ctx.lineTo(-player.r,0);
+            ctx.closePath();
+        }
+    }
+    ctx.fill();
+    ctx.restore();
+}
+
+// GAME LOOP
+function loop(){
+    update();
+    draw();
+    requestAnimationFrame(loop);
+}
 loop();
 
-/* INPUT */
-window.addEventListener('keydown',e=>{ keys[e.key.toLowerCase()]=true; if(e.key===' '&&!idleMode) fireSingle(); if(e.key.toLowerCase()==='h'&&!idleMode&&hUses>0){ fireSpread(); hUses--; }});
-window.addEventListener('keyup',e=>{ keys[e.key.toLowerCase()]=false; });
+// INPUT HANDLING
+document.addEventListener('keydown', e => { keys[e.key.toLowerCase()]=true; });
+document.addEventListener('keyup', e => { keys[e.key.toLowerCase()]=false; });
 
-/* IDLE MODE */
-document.getElementById('idleBtn').onclick=()=>{ if(idleMode) return; idleMode=true; document.getElementById('idleBtn').style.display='none'; document.getElementById('exitIdleBtn').style.display='block'; idleInterval=setInterval(()=>{ for(let i=0;i<currentShapeSides;i++) fireSingle(); if(combo>=10) fireSpread(); },1000); };
-document.getElementById('exitIdleBtn').onclick=()=>{ idleMode=false; clearInterval(idleInterval); idleInterval=null; document.getElementById('exitIdleBtn').style.display='none'; document.getElementById('idleBtn').style.display='block'; };
+// IDLE MODE
+const idleBtn = document.getElementById('idleBtn');
+const exitIdleBtn = document.getElementById('exitIdleBtn');
+idleBtn.addEventListener('click',()=>{
+    idleMode=true;
+    idleBtn.style.display='none';
+    exitIdleBtn.style.display='block';
+});
+exitIdleBtn.addEventListener('click',()=>{
+    idleMode=false;
+    idleBtn.style.display='block';
+    exitIdleBtn.style.display='none';
+});
 
-/* SAVE / LOAD SYSTEM */
-const savePanel = document.getElementById("savePanel");
-const saveText  = document.getElementById("saveText");
-document.getElementById("saveLoadBtn").onclick = () => { savePanel.style.display = "block"; saveText.value = ""; gamePaused=true; };
-document.getElementById("closeSave").onclick = () => { savePanel.style.display = "none"; gamePaused=false; };
-document.getElementById("saveBtn").onclick = () => {
-  const data={
-    mass,
-    tokens:player.tokens,
-    combo,
-    currentShapeSides,
-    playerRainbow:player.rainbow,
-    playerX:player.x,
-    playerY:player.y,
-    pixelated,
-    enemies:enemies.map(e=>({x:e.x,y:e.y,r:e.r,hp:e.hp}))
-  };
-  saveText.value=btoa(JSON.stringify(data));
-};
-document.getElementById("loadBtn").onclick = () => {
-  try{
-    const data=JSON.parse(atob(saveText.value.trim()));
-    mass=data.mass ?? mass;
-    player.tokens=data.tokens ?? player.tokens;
-    combo=data.combo ?? combo;
-    currentShapeSides=data.currentShapeSides ?? currentShapeSides;
-    player.rainbow=!!data.playerRainbow;
-    player.x=data.playerX ?? player.x;
-    player.y=data.playerY ?? player.y;
-    pixelated=data.pixelated ?? false;
-    enemies=data.enemies ?? [];
-    savePanel.style.display="none";
-    gamePaused=false;
-    bulletMultiplier = (currentShapeSides===100)?2:1;
-  }catch{ alert("Invalid save code"); }
-};
+// SAVE / LOAD
+const savePanel = document.getElementById('savePanel');
+const saveText = document.getElementById('saveText');
+document.getElementById('saveLoadBtn').addEventListener('click',()=>{ savePanel.style.display='block'; });
+document.getElementById('closeSave').addEventListener('click',()=>{ savePanel.style.display='none'; });
+document.getElementById('saveBtn').addEventListener('click',()=>{
+    const saveData = {
+        mass, currentShapeSides, player, bullets, enemies, particles, combo, difficulty, pixelated
+    };
+    saveText.value = btoa(JSON.stringify(saveData));
+});
+document.getElementById('loadBtn').addEventListener('click',()=>{
+    try{
+        const data = JSON.parse(atob(saveText.value));
+        ({mass,currentShapeSides,player,bullets,enemies,particles,combo,difficulty,pixelated} = data);
+        alert('Game loaded!');
+    } catch(e){ alert('Invalid save!'); }
+});
 
-/* TITLE SCREEN BUTTON WITH PIXELATION TRANSITION */
-const transitionCanvas = document.getElementById("transitionCanvas");
-const tCtx = transitionCanvas.getContext("2d");
-transitionCanvas.width = innerWidth;
-transitionCanvas.height = innerHeight;
-window.addEventListener('resize',()=>{transitionCanvas.width=innerWidth;transitionCanvas.height=innerHeight;});
+// START BUTTON TRANSITION
+const titleScreen = document.getElementById('titleScreen');
+const startBtn = document.getElementById('startBtn');
+startBtn.addEventListener('click',()=>{
+    titleScreen.classList.add('fadeOut');
+    setTimeout(()=>{
+        titleScreen.style.display='none';
+        canvas.style.opacity='0';
+        canvas.classList.add('fadeIn');
+    },1200);
+});
 
-// PIXELATION FUNCTION
-function pixelateTransition(callback){
-    transitionCanvas.style.display = "block";
-
-    const w = transitionCanvas.width;
-    const h = transitionCanvas.height;
-
-    // STEP 1: DRAW TITLE SCREEN INTO TRANSITION CANVAS
-    tCtx.fillStyle = "#0b0b0b";
-    tCtx.fillRect(0,0,w,h);
-
-    // draw logo + button snapshot
-    const title = document.getElementById("titleScreen");
-    const rect = title.getBoundingClientRect();
-
-    tCtx.drawImage(
-        canvas,
-        0,0,w,h
-    );
-
-    // STEP 2: capture TITLE pixels
-    let source = tCtx.getImageData(0,0,w,h);
-
-    let start = null;
-    const duration = 700; // ms
-    let switched = false;
-
-    function drawPixels(block){
-        tCtx.clearRect(0,0,w,h);
-
-        for(let y=0;y<h;y+=block){
-            for(let x=0;x<w;x+=block){
-                const i=((y*w+x)*4);
-                const r=source.data[i];
-                const g=source.data[i+1];
-                const b=source.data[i+2];
-                tCtx.fillStyle=`rgb(${r},${g},${b})`;
-                tCtx.fillRect(x,y,block,block);
-            }
-        }
-    }
-
-    function animate(ts){
-        if(!start) start = ts;
-        const t = (ts-start)/duration;
-
-        // smooth curve
-        const eased = t<0.5
-          ? 2*t*t
-          : 1-Math.pow(-2*t+2,2)/2;
-
-        const block = Math.max(1, Math.floor(eased*64));
-
-        drawPixels(block);
-
-        // SWITCH TO GAME EXACTLY ONCE
-        if(t>0.5 && !switched){
-            switched = true;
-            document.getElementById("titleScreen").style.display="none";
-            gamePaused = false;
-            update();
-            draw();
-            source = ctx.getImageData(0,0,w,h);
-            if(callback) callback();
-        }
-
-        if(t<1){
-            requestAnimationFrame(animate);
-        } else {
-            transitionCanvas.style.display="none";
-        }
-    }
-
-    requestAnimationFrame(animate);
-}
-  
-// START BUTTON CLICK
-document.getElementById('startBtn').onclick = ()=>{
-    pixelateTransition(()=>{});
-
-};
-
+// OPTIONAL: click to shoot
+document.addEventListener('click',()=>{ if(!idleMode)fireSingle(); });
 </script>
+
 </body>
 </html>

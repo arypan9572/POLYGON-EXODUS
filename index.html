@@ -26,28 +26,39 @@ button:hover{opacity:0.85;}
 #titleLogo {
   width: 400px; /* adjust size as needed */
   opacity: 0;
-  animation: fadeInMove 2s forwards, floatUpDown 3s ease-in-out infinite alternate;
+  animation: fadeInMoveLogo 2s forwards, floatLogo 4s ease-in-out infinite alternate;
 }
 
 #startBtn {
   font-size: 24px;
   width: 200px;
-  margin-top: 30px;
+  margin-top: 80px; /* increased margin to move higher */
   opacity: 0;
-  animation: fadeInMove 2s 0.5s forwards, floatUpDown 3s ease-in-out infinite alternate;
+  animation: fadeInMoveBtn 2s 0.5s forwards, floatBtn 3s ease-in-out infinite alternate;
 }
 
 /* FADE IN + MOVE UP SLIGHTLY */
-@keyframes fadeInMove {
-  0% { opacity: 0; transform: translateY(30px); }
+@keyframes fadeInMoveLogo {
+  0% { opacity: 0; transform: translateY(50px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInMoveBtn {
+  0% { opacity: 0; transform: translateY(60px); }
   100% { opacity: 1; transform: translateY(0); }
 }
 
 /* FLOAT UP AND DOWN */
-@keyframes floatUpDown {
+@keyframes floatLogo {
   0% { transform: translateY(0); }
-  100% { transform: translateY(8px); }
+  100% { transform: translateY(20px); } /* logo floats farther */
 }
+
+@keyframes floatBtn {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(35px); } /* button floats farther and at a different rate */
+}
+
 
 /* Title Screen */
 #titleScreen {

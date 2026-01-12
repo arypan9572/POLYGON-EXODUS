@@ -31,9 +31,6 @@ button:hover{opacity:0.85;}
   animation: titleFadeOut 1.2s forwards;
 }
 
-#titleScreen.fadeOut * {
-  animation-play-state: paused !important;
-}
 
 @keyframes titleFadeOut {
   from { opacity: 1; }
@@ -90,6 +87,15 @@ button:hover{opacity:0.85;}
   0% { transform: translateY(0); }
   100% { transform: translateY(35px); } /* button floats farther and at a different rate */
 }
+  @keyframes fadeOutLogo {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(0); }
+}
+@keyframes fadeOutBtn {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(0); }
+}
+
 </style>
 </head>
 <body>
@@ -459,14 +465,25 @@ document.getElementById('loadBtn').addEventListener('click',()=>{
 // START BUTTON TRANSITION
 const titleScreen = document.getElementById('titleScreen');
 const startBtn = document.getElementById('startBtn');
-startBtn.addEventListener('click',()=>{
+startBtn.addEventListener('click', () => {
+    // Prevent multiple clicks
+    startBtn.disabled = true;
+
+    // Fade out logo and button
+    titleLogo.style.animation = 'fadeOutLogo 1.2s forwards';
+    startBtn.style.animation = 'fadeOutBtn 1.2s forwards';
+
+    // Fade out the whole title screen
     titleScreen.classList.add('fadeOut');
-    setTimeout(()=>{
-        titleScreen.style.display='none';
-        canvas.style.opacity='0';
+
+    // After fade, hide title and show game canvas
+    setTimeout(() => {
+        titleScreen.style.display = 'none';
         canvas.classList.add('fadeIn');
-    },1200);
+        canvas.style.opacity = '1';
+    }, 1200);
 });
+
 
 // OPTIONAL: click to shoot
 document.addEventListener('click',()=>{ if(!idleMode)fireSingle(); });

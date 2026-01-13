@@ -54,9 +54,26 @@ button:hover{opacity:0.85;}
 <!-- TITLE SCREEN -->
 <div id="titleScreen">
   <img id="titleLogo" src="polyex.png" alt="POLYGON EXODUS Logo">
-  <button id="startBtn">START GAME</button>
-  <button id="hardBtn">HARD MODE</button>
+
+  <!-- MODE SELECT -->
+  <div id="modeSelect" style="display:flex; gap:80px; margin-top:40px;">
+    <button id="classicBtn" style="width:180px;">CLASSIC</button>
+    <button id="arcadeBtn" style="width:180px;">ARCADE</button>
+  </div>
+
+  <!-- CLASSIC OPTIONS -->
+  <div id="classicOptions" style="display:none; margin-top:40px; width:240px;">
+    <button id="startBtn">START GAME</button>
+    <button id="hardBtn">HARD MODE</button>
+  </div>
+
+  <!-- ARCADE OPTIONS -->
+  <div id="arcadeOptions" style="display:none; margin-top:40px; width:240px;">
+    <button disabled>SURVIVOR (Coming Soon)</button>
+    <button disabled>SWITCHUP (Coming Soon)</button>
+  </div>
 </div>
+
 
 <audio id="menuMusic" src="mm.mp3" loop></audio>
 
@@ -116,10 +133,20 @@ let keys={},idleMode=false,idleInterval=null;
 let combo=0,mass=0,difficulty=1,hUses=12;
 
 /* ==== BLUE CUBE ==== */
+  const blueCubeImg = new Image();
+blueCubeImg.src = "bluecube.png";
+
 let blueCube=null,nextCubeSpawn=Date.now()+30000,enemyOriginalSpeeds=new Map();
 function updateBlueCube(deltaTime){
   if(!blueCube && Date.now()>=nextCubeSpawn){
-    blueCube={x:50+Math.random()*(canvas.width-100),y:50+Math.random()*(canvas.height-100),size:30,speed:80};
+   blueCube={
+  x:50+Math.random()*(canvas.width-100),
+  y:50+Math.random()*(canvas.height-100),
+  size:40,
+  speed:80,
+  angle:0
+};
+
   }
   if(blueCube){
     const dx=blueCube.x-player.x,dy=blueCube.y-player.y,dist=Math.hypot(dx,dy)||1;
@@ -135,10 +162,21 @@ function updateBlueCube(deltaTime){
   }
 }
 function drawBlueCube(){
-  if(!blueCube) return;
-  ctx.fillStyle="blue";
-  ctx.fillRect(blueCube.x-blueCube.size/2,blueCube.y-blueCube.size/2,blueCube.size,blueCube.size);
-  ctx.strokeStyle="#0ff"; ctx.lineWidth=2; ctx.strokeRect(blueCube.x-blueCube.size/2,blueCube.y-blueCube.size/2,blueCube.size,blueCube.size);
+  if(!blueCube || !blueCubeImg.complete) return;
+
+  blueCube.angle += 0.05;
+
+  ctx.save();
+  ctx.translate(blueCube.x, blueCube.y);
+  ctx.rotate(blueCube.angle);
+  ctx.drawImage(
+    blueCubeImg,
+    -blueCube.size/2,
+    -blueCube.size/2,
+    blueCube.size,
+    blueCube.size
+  );
+  ctx.restore();
 }
 
 /* ==== CAMERA SHAKE ==== */
@@ -426,15 +464,39 @@ function pixelateTransition(callback){
 }
 
 /* ==== TITLE SCREEN BUTTONS ==== */
-document.getElementById('startBtn').onclick=()=>{
-  menuMusic.pause(); menuMusic.currentTime=0;
-  pixelateTransition(()=>{ hardMode=false; });
+const modeSelect = document.getElementById("modeSelect");
+const classicOptions = document.getElementById("classicOptions");
+const arcadeOptions = document.getElementById("arcadeOptions");
+
+document.getElementById("classicBtn").onclick = () => {
+  modeSelect.style.display = "none";
+  arcadeOptions.style.display = "none";
+  classicOptions.style.display = "block";
 };
-document.getElementById('hardBtn').onclick=()=>{
-  menuMusic.pause(); menuMusic.currentTime=0;
-  pixelateTransition(()=>{ hardMode=true; difficulty*=2; });
-  
+
+document.getElementById("arcadeBtn").onclick = () => {
+  modeSelect.style.display = "none";
+  classicOptions.style.display = "none";
+  arcadeOptions.style.display = "block";
 };
+
+document.getElementById('startBtn').onclick = () => {
+  menuMusic.pause();
+  menuMusic.currentTime = 0;
+  pixelateTransition(() => {
+    hardMode = false;
+  });
+};
+
+document.getElementById('hardBtn').onclick = () => {
+  menuMusic.pause();
+  menuMusic.currentTime = 0;
+  pixelateTransition(() => {
+    hardMode = true;
+    difficulty *= 2;
+  });
+};
+
 </script>
 </body>
 </html>

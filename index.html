@@ -147,7 +147,8 @@ button:hover{opacity:0.85;}
 
 <div id="heartsUI"></div>
 
-
+<button id="backBtn" style="position:fixed;top:14px;right:14px;z-index:500;display:none;">BACK</button>
+  
 <div id="savePanel" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999;">
   <div style="width:420px;background:#111;border:2px solid #555;padding:14px;margin:10% auto;border-radius:10px;">
     <b>Save / Load Game</b>
@@ -369,6 +370,8 @@ function renderHearts(){
 }
 
 function update(){
+  if(dead) return;
+
   const now=performance.now();
   if(!idleMode){ if(keys.w)player.y-=4; if(keys.s)player.y+=4; if(keys.a)player.x-=4; if(keys.d)player.x+=4; }
   else{ player.x+=(canvas.width/2-player.x)*0.05; player.y+=(canvas.height/2-player.y)*0.05; }
@@ -527,11 +530,21 @@ function drawPlayerShape(){
 
 /* ==== LOOP ==== */
 let gamePaused=true;
-function loop(){ requestAnimationFrame(loop); if(!gamePaused){ update(); draw(); } }
+function loop(){
+  requestAnimationFrame(loop);
+
+  if (!gamePaused) {
+    update();
+  }
+
+  draw(); // ALWAYS draw (needed for death screen)
+}
+
 loop();
 
 /* ==== INPUT ==== */
-window.addEventListener('keydown',e=>{ keys[e.key.toLowerCase()]=true; if(e.key===' '&&!idleMode) fireSingle(); if(e.key.toLowerCase()==='h'&&!idleMode&&hUses>0){ fireSpread(); hUses--; }});
+window.addEventListener('keydown', e => {     keys[e.key.toLowerCase()] = true;      if(e.key === ' ' && !idleMode) fireSingle();     if(e.key.toLowerCase() === 'h' && !idleMode && hUses>0) { fireSpread(); hUses--; }      if(e.key === "Backspace"){  // toggle pause        
+  gamePaused = !gamePaused;     } });  window.addEventListener('keyup', e => {     keys[e.key.toLowerCase()] = false; });
 window.addEventListener('keyup',e=>{ keys[e.key.toLowerCase()]=false; });
 
 /* ==== IDLE MODE ==== */
@@ -664,8 +677,28 @@ document.getElementById("survivorBtn").onclick = () => {
     dead = false;
     invulnerable = false;
     gamePaused = false;
+
+    document.getElementById("backBtn").style.display = "block"; // SHOW BACK BUTTON
   });
 };
+
+document.getElementById("backBtn").onclick = () => {
+    gamePaused = true;
+    dead = false;
+    gameMode = "classic";
+    hearts = 3;
+    kills = 0;
+    invulnerable = false;
+    scoreDisplay = 0;
+    mass = 0;
+    player.tokens = 0;
+    combo = 0;
+
+    document.getElementById("backBtn").style.display = "none"; // hide button
+    document.getElementById("titleScreen").style.display = "flex"; // go back to title
+};
+
+
 
 
 </script>

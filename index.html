@@ -140,6 +140,8 @@ button:hover{opacity:0.85;}
   <button id="idleBtn">IDLE MODE</button>
   <button id="exitIdleBtn" style="display:none;">EXIT IDLE MODE</button>
   <button id="saveLoadBtn">SAVE / LOAD</button>
+  <button id="backBtn" style="display:none; margin-top:10px;">BACK TO TITLE</button>
+
 </div>
 
 <canvas id="transitionCanvas" style="position:fixed;inset:0;z-index:1500;pointer-events:none;display:none;"></canvas>
@@ -237,9 +239,10 @@ function drawBlueCube(){
   ctx.translate(blueCube.x, blueCube.y);
   ctx.rotate(blueCube.angle);
 
-  // white glow
-  ctx.shadowColor = "white";
-  ctx.shadowBlur = 25;
+
+  ctx.shadowColor = "rgba(173,216,230,0.5)"; // soft blue glow
+ctx.shadowBlur = 12; // less glow
+
 
   ctx.drawImage(
     blueCubeImg,
@@ -464,7 +467,12 @@ function triggerDeathScreen(){
   dead = true;
   gamePaused = true;
   deathStartTime = performance.now();
+
+  if(gameMode === "survivor"){
+    document.getElementById("backBtn").style.display = "block";
+  }
 }
+
 
 function draw(){
   ctx.save();
@@ -678,9 +686,10 @@ document.getElementById("survivorBtn").onclick = () => {
     invulnerable = false;
     gamePaused = false;
 
-    document.getElementById("backBtn").style.display = "block"; // SHOW BACK BUTTON
+    document.getElementById("backBtn").style.display = "none"; // HIDE BACK BUTTON
   });
 };
+
 
 document.getElementById("backBtn").onclick = () => {
     gamePaused = true;

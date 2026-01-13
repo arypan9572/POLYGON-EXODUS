@@ -345,7 +345,7 @@ window.addEventListener('keyup',e=>{ keys[e.key.toLowerCase()]=false; });
   const baseInterval = 1000; // triangle speed
   const idx = shapeOrder.indexOf(currentShapeSides);
   const tier = Math.max(0, idx); // progression-based tier
-  return baseInterval / Math.pow(1.25, tier);
+  return baseInterval / Math.pow(1.07, tier);
 }
 
 
@@ -353,9 +353,9 @@ function restartIdleIfActive(){
   if(idleMode){
     clearInterval(idleInterval);
     idleInterval = setInterval(()=>{
-      for(let i=0;i<currentShapeSides;i++) fireSingle();
-      if(combo>=10) fireSpread();
-    }, getIdleFireInterval());
+  fireSpread();
+}, getIdleFireInterval());
+
   }
 }
 

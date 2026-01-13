@@ -187,6 +187,8 @@ function evolve(){
     currentShapeSides=pixelOrder[Math.min(idx+1,pixelOrder.length-1)];
   }
   bulletMultiplier=(currentShapeSides===100)?2:1;
+  restartIdleIfActive();
+
 }
 
 /* ==== ENEMIES ==== */
@@ -253,7 +255,9 @@ function update(){
   enemies.forEach((e,i)=>{
     const dx=player.x-e.x, dy=player.y-e.y, d=Math.hypot(dx,dy)||1;
     e.x+=dx/d*e.speed; e.y+=dy/d*e.speed;
-    if(d<player.r+e.r){ const idx=shapeOrder.indexOf(currentShapeSides); currentShapeSides=shapeOrder[Math.max(0,idx-3)]; combo=0; player.rainbow=false; shakeCamera(5); enemies.splice(i,1);}
+    if(d<player.r+e.r){ const idx=shapeOrder.indexOf(currentShapeSides); currentShapeSides=shapeOrder[Math.max(0,idx-3)]; 
+    restartIdleIfActive();
+combo=0; player.rainbow=false; shakeCamera(5); enemies.splice(i,1);}
     if(e.x<-50||e.x>canvas.width+50||e.y<-50||e.y>canvas.height+50) enemies.splice(i,1);
   });
 
@@ -336,11 +340,35 @@ window.addEventListener('keydown',e=>{ keys[e.key.toLowerCase()]=true; if(e.key=
 window.addEventListener('keyup',e=>{ keys[e.key.toLowerCase()]=false; });
 
 /* ==== IDLE MODE ==== */
+
+ function getIdleFireInterval(){
+  const baseInterval = 1000; // triangle speed
+  const idx = shapeOrder.indexOf(currentShapeSides);
+  const tier = Math.max(0, idx); // progression-based tier
+  return baseInterval / Math.pow(1.25, tier);
+}
+
+
+function restartIdleIfActive(){
+  if(idleMode){
+    clearInterval(idleInterval);
+    idleInterval = setInterval(()=>{
+      for(let i=0;i<currentShapeSides;i++) fireSingle();
+      if(combo>=10) fireSpread();
+    }, getIdleFireInterval());
+  }
+}
+
 document.getElementById('idleBtn').onclick=()=>{
-  if(idleMode) return; idleMode=true;
-  document.getElementById('idleBtn').style.display='none'; document.getElementById('exitIdleBtn').style.display='block';
-  idleInterval=setInterval(()=>{ for(let i=0;i<currentShapeSides;i++) fireSingle(); if(combo>=10) fireSpread(); },1000);
+  if(idleMode) return;
+  idleMode = true;
+
+  document.getElementById('idleBtn').style.display='none';
+  document.getElementById('exitIdleBtn').style.display='block';
+
+  restartIdleIfActive();
 };
+
 document.getElementById('exitIdleBtn').onclick=()=>{
   idleMode=false; clearInterval(idleInterval); idleInterval=null;
   document.getElementById('exitIdleBtn').style.display='none'; document.getElementById('idleBtn').style.display='block';

@@ -23,7 +23,17 @@ canvas { display:block; }
 @keyframes floatUpDown { 0%{top:0px;} 100%{top:4px;} }
 .comboText { position:absolute; top:10px; left:50%; transform:translateX(-50%); font-weight:bold; font-style:italic; font-size:22px; animation: floatCombo 1s ease-out forwards; pointer-events:none; }
 @keyframes floatCombo { 0%{opacity:1; top:10px;} 100%{opacity:0; top:-40px;} }
-button { width:100%; padding:6px; margin:4px 0; border-radius:6px; border:none; cursor:pointer; font-weight:bold; }
+button {
+  width: 200px;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 18px;
+}
+
 button:hover{opacity:0.85;}
 
 /* TITLE SCREEN */
@@ -47,6 +57,10 @@ button:hover{opacity:0.85;}
 @keyframes fadeInMoveBtn { 0% { opacity:0; transform:translateY(60px); } 100% { opacity:1; transform:translateY(0); } }
 @keyframes floatLogo { 0% { transform:translateY(0); } 100% { transform:translateY(20px); } }
 @keyframes floatBtn { 0% { transform:translateY(0); } 100% { transform:translateY(35px); } }
+@keyframes floatSlow   { from{transform:translateY(0);} to{transform:translateY(14px);} }
+@keyframes floatMedium { from{transform:translateY(0);} to{transform:translateY(20px);} }
+@keyframes floatFast   { from{transform:translateY(0);} to{transform:translateY(26px);} }
+
 </style>
 </head>
 <body>
@@ -56,19 +70,22 @@ button:hover{opacity:0.85;}
   <img id="titleLogo" src="polyex.png" alt="POLYGON EXODUS Logo">
 
   <!-- MODE SELECT -->
-  <div id="modeSelect" style="display:flex; gap:80px; margin-top:40px;">
+  <div id="modeSelect" style="display:flex; gap:80px; margin-top:40px; animation:floatSlow 4s ease-in-out infinite alternate;">
+
     <button id="classicBtn" style="width:180px;">CLASSIC</button>
     <button id="arcadeBtn" style="width:180px;">ARCADE</button>
   </div>
 
   <!-- CLASSIC OPTIONS -->
-  <div id="classicOptions" style="display:none; margin-top:40px; width:240px;">
+ <div id="classicOptions" style="display:none; margin-top:40px; width:240px; animation:floatMedium 3.2s ease-in-out infinite alternate;">
+
     <button id="startBtn">START GAME</button>
     <button id="hardBtn">HARD MODE</button>
   </div>
 
   <!-- ARCADE OPTIONS -->
-  <div id="arcadeOptions" style="display:none; margin-top:40px; width:240px;">
+ <div id="arcadeOptions" style="display:none; margin-top:40px; width:240px; animation:floatFast 2.8s ease-in-out infinite alternate;">
+
     <button disabled>SURVIVOR (Coming Soon)</button>
     <button disabled>SWITCHUP (Coming Soon)</button>
   </div>
@@ -142,7 +159,7 @@ function updateBlueCube(deltaTime){
    blueCube={
   x:50+Math.random()*(canvas.width-100),
   y:50+Math.random()*(canvas.height-100),
-  size:40,
+  size:80,
   speed:80,
   angle:0
 };
@@ -169,6 +186,11 @@ function drawBlueCube(){
   ctx.save();
   ctx.translate(blueCube.x, blueCube.y);
   ctx.rotate(blueCube.angle);
+
+  // white glow
+  ctx.shadowColor = "white";
+  ctx.shadowBlur = 25;
+
   ctx.drawImage(
     blueCubeImg,
     -blueCube.size/2,
@@ -176,8 +198,10 @@ function drawBlueCube(){
     blueCube.size,
     blueCube.size
   );
+
   ctx.restore();
 }
+
 
 /* ==== CAMERA SHAKE ==== */
 let shakeAmount=0;

@@ -145,6 +145,8 @@ button:hover{opacity:0.85;}
 <audio id="menuMusic" src="mm.mp3" loop></audio>
 <audio id="btnHover" src="btnhvr.mp3"></audio>
 <audio id="btnClick" src="btnclk.mp3"></audio>
+<audio id="gameMusic" src="Exodus.mp3" loop></audio>
+
 
 <div id="ui">
   <div><b>Player</b></div>
@@ -187,6 +189,8 @@ const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 canvas.width = innerWidth; canvas.height = innerHeight;
 window.addEventListener('resize',()=>{ canvas.width=innerWidth; canvas.height=innerHeight; });
+
+const gameMusic = document.getElementById('gameMusic');
 
 const menuMusic = document.getElementById('menuMusic');
 
@@ -875,27 +879,30 @@ document.getElementById("settingsBtn").onclick = () => {
 
 
   
-document.getElementById('startBtn').onclick = () => {
-  menuMusic.pause();
-  menuMusic.currentTime = 0;
-  pixelateTransition(() => {
-    hardMode = false;
-  });
-};
 document.getElementById('hardBtn').onclick = () => {
   menuMusic.pause();
   menuMusic.currentTime = 0;
+
+  gameMusic.currentTime = 0;
+  gameMusic.play().catch(()=>console.log("Game music blocked"));
+
   pixelateTransition(() => {
     hardMode = true;
     difficulty *= 2;
+    gamePaused = false;
+    gameMode = "classic";
   });
 };
+
 document.getElementById("survivorBtn").onclick = () => {
   menuMusic.pause();
   menuMusic.currentTime = 0;
 
+  gameMusic.currentTime = 0;
+  gameMusic.play().catch(()=>console.log("Game music blocked"));
+
   pixelateTransition(() => {
-    gameMode = "survivor"; // EXACT LINE: sets survivor mode active
+    gameMode = "survivor";
     hearts = 3;
     kills = 0;
     dead = false;
@@ -907,24 +914,30 @@ document.getElementById("survivorBtn").onclick = () => {
 };
 
 
-
 document.getElementById("backBtn").onclick = () => {
-  gameMode = "menu"; // EXACT LINE: still in menu while selecting
-    gamePaused = true;
-    dead = false;
-    gameMode = "classic";
-    hearts = 3;
-    kills = 0;
-    invulnerable = false;
-    scoreDisplay = 0;
-    mass = 0;
-    player.tokens = 0;
-    combo = 0;
+  gameMode = "menu";
+  gamePaused = true;
+  dead = false;
+  gameMode = "classic";
+  hearts = 3;
+  kills = 0;
+  invulnerable = false;
+  scoreDisplay = 0;
+  mass = 0;
+  player.tokens = 0;
+  combo = 0;
 
-    document.getElementById("backBtn").style.display = "none"; // hide button
-    document.getElementById("titleScreen").style.display = "flex"; // go back to title
+  document.getElementById("backBtn").style.display = "none"; 
+  document.getElementById("titleScreen").style.display = "flex"; 
+
+  // stop game music
+  gameMusic.pause();
+  gameMusic.currentTime = 0;
+
+  // restart menu music
+  menuMusic.currentTime = 0;
+  menuMusic.play().catch(()=>console.log("Menu music blocked on return"));
 };
-
 
 
 document.getElementById("lightModeBtn").onclick = () => {

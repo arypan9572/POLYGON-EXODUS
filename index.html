@@ -364,54 +364,13 @@ function evolve(){
 
 /* ==== ENEMIES ==== */
 function spawnEnemy(){
-  // SAFETY: do not spawn in menus, pause, or death screen
-  if(gamePaused || dead || gameMode === "menu") return;
-
-  const roll = Math.random();
-
-  let type = "normal";
-  if(roll < 0.65) type = "normal";
-  else if(roll < 0.9) type = "fast";
-  else type = "tank";
-
-  let r, speed, hp;
-
-  if(type === "normal"){
-    r = 8;
-    speed = 0.7 + difficulty * 0.2;
-    hp = 1;
-  }
-
-  if(type === "fast"){
-    r = 6;
-    speed = 1.4 + difficulty * 0.25;
-    hp = 1;
-  }
-
-  if(type === "tank"){
-    r = 14;
-    speed = 0.45 + difficulty * 0.15;
-    hp = 3;
-  }
-
-  if(hardMode) speed *= 1.4;
-
-  let x = Math.random() < 0.5 ? -20 : canvas.width + 20;
-  let y = Math.random() * canvas.height;
-
-enemies.push({
-  x: x,
-  y: y,
-  r: r,
-  speed: speed,
-  hp: hp,
-  type: type,
-  dashCooldown: Math.random() * 200 + 100,
-  explode: type === "tank",
-  split: type === "normal" && Math.random() < 0.08
-});
+  const r = 8;
+  let x = Math.random()<0.5?-20:canvas.width+20;
+  let y = Math.random()*canvas.height;
+  let speed = 0.7 + difficulty*0.2;
+  if(hardMode) speed *= 1.7;
+  enemies.push({x,y,r,hp:1,speed});
 }
-
   setInterval(() => {
     if(!gamePaused && !dead && gameMode !== "menu") spawnEnemy();
 }, 800);
@@ -514,40 +473,7 @@ function update(){
 
   bullets.forEach((b,bi)=>{
     enemies.forEach((e,ei)=>{
-      if(Math.hypot(b.x-e.x,b.y-e.y) < e.r){
-  bullets.splice(bi,1);
-
-  e.hp--;
-
-  if(e.hp <= 0){
-    enemies.splice(ei,1);
-    createExplosion(e.x,e.y);
-
-    if(gameMode === "survivor"){
-      mass++;
-      if(mass > highScore){
-        highScore = mass;
-        localStorage.setItem("highScore", highScore);
-        document.getElementById("highScore").textContent = highScore;
-      }
-      player.tokens++;
-    }
-
-    evolve();
-    kills++;
-
-    if(gameMode === "survivor" && kills % 150 === 0){
-      hearts = Math.min(maxHearts, hearts + 1);
-    }
-
-    combo++;
-    shakeCamera(8);
-    if(mass % 20 === 0) difficulty++;
-    if(combo > 1) showCombo(combo);
-    if(combo >= 35 && !player.rainbow) player.rainbow = true;
-  }
-}
- if(gameMode === "survivor") {  // ONLY in survivor mode
+      if(Math.hypot(b.x-e.x,b.y-e.y)<e.r){ bullets.splice(bi,1); enemies.splice(ei,1); createExplosion(e.x,e.y); if(gameMode === "survivor") {  // ONLY in survivor mode
     mass++;  // increase score
     if(mass > highScore){
         highScore = mass;
@@ -556,19 +482,7 @@ function update(){
     }
     player.tokens++;
 }
-evolve();
-kills++;
-
-if(gameMode === "survivor" && kills % 150 === 0){
-    hearts = Math.min(maxHearts, hearts + 1);
-}
-
-combo++;
-shakeCamera(8);
-
-if(mass % 20 === 0) difficulty++;
-if(combo > 1) showCombo(combo);
-if(combo >= 35 && !player.rainbow) player.rainbow = true;
+ evolve(); kills++;  if(gameMode === "survivor" && kills % 150 === 0){   hearts = Math.min(maxHearts, hearts + 1); } combo++; shakeCamera(8); if(mass%20===0)difficulty++; if(combo>1)showCombo(combo); if(combo>=35&&!player.rainbow)player.rainbow=true; }
     });
   });
 
@@ -715,11 +629,7 @@ ctx.shadowBlur = 6; // more visible through VHS
 
 
 
-  enemies.forEach(e=>{
-  if(e.type === "fast") ctx.fillStyle = "#ff5555";
-  else if(e.type === "tank") ctx.fillStyle = "#aa0000";
-  else ctx.fillStyle = "red";
- ctx.beginPath(); ctx.arc(e.x,e.y,e.r,0,Math.PI*2); ctx.fill(); });
+  enemies.forEach(e=>{ ctx.fillStyle='red'; ctx.beginPath(); ctx.arc(e.x,e.y,e.r,0,Math.PI*2); ctx.fill(); });
   particles.forEach(p=>{ ctx.fillStyle=`rgba(255,0,0,${p.alpha})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill(); });
   drawDonut(ctx, performance.now(), canvas.width / 2, canvas.height / 2);
   drawBlueCube();

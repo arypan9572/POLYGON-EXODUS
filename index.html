@@ -150,6 +150,8 @@ button:hover{opacity:0.85;}
   <div>Mass: <span id="mass">0</span></div>
   <div>Shape: <span id="tier">Triangle</span></div>
   <div>Tokens: <span id="tokens">0</span></div>
+  <div>High Score: <span id="highScore">0</span></div>
+
   <hr>
   <b>Leaderboard</b>
   <div id="leaderboard"></div>
@@ -209,7 +211,10 @@ let combo=0,mass=0,difficulty=1,hUses=12;
 
 // ==== SURVIVOR MODE ====
 let gameMode = "classic"; // "classic" or "survivor"
+gameMode = "menu"; // menu is active by default
 let hearts = 3;
+let highScore = localStorage.getItem("highScore") || 0;
+document.getElementById("highScore").textContent = highScore;
 let maxHearts = 6;
 let kills = 0;
 let invulnerable = false;
@@ -348,7 +353,10 @@ function spawnEnemy(){
   if(hardMode) speed *= 1.7;
   enemies.push({x,y,r,hp:1,speed});
 }
-setInterval(spawnEnemy,800);
+  setInterval(() => {
+    if(!gamePaused && !dead && gameMode !== "menu") spawnEnemy();
+}, 800);
+
 setInterval(()=>{hUses=12;},60000);
 
 /* ==== EXPLOSIONS ==== */
@@ -447,7 +455,16 @@ function update(){
 
   bullets.forEach((b,bi)=>{
     enemies.forEach((e,ei)=>{
-      if(Math.hypot(b.x-e.x,b.y-e.y)<e.r){ bullets.splice(bi,1); enemies.splice(ei,1); createExplosion(e.x,e.y); mass++; player.tokens++; evolve(); kills++;  if(gameMode === "survivor" && kills % 150 === 0){   hearts = Math.min(maxHearts, hearts + 1); } combo++; shakeCamera(8); if(mass%20===0)difficulty++; if(combo>1)showCombo(combo); if(combo>=35&&!player.rainbow)player.rainbow=true; }
+      if(Math.hypot(b.x-e.x,b.y-e.y)<e.r){ bullets.splice(bi,1); enemies.splice(ei,1); createExplosion(e.x,e.y); if(gameMode === "survivor") {  // ONLY in survivor mode
+    mass++;  // increase score
+    if(mass > highScore){
+        highScore = mass;
+        localStorage.setItem("highScore", highScore);
+        document.getElementById("highScore").textContent = highScore;
+    }
+    player.tokens++;
+}
+ evolve(); kills++;  if(gameMode === "survivor" && kills % 150 === 0){   hearts = Math.min(maxHearts, hearts + 1); } combo++; shakeCamera(8); if(mass%20===0)difficulty++; if(combo>1)showCombo(combo); if(combo>=35&&!player.rainbow)player.rainbow=true; }
     });
   });
 
@@ -809,17 +826,20 @@ const arcadeOptions = document.getElementById("arcadeOptions");
 
 
 document.getElementById("classicBtn").onclick = () => {
+  gameMode = "menu"; // EXACT LINE: still in menu while selecting
   modeSelect.style.display = "none";
   arcadeOptions.style.display = "none";
   classicOptions.style.display = "block";
 };
 
 document.getElementById("arcadeBtn").onclick = () => {
+  gameMode = "menu"; // EXACT LINE: still in menu while selecting
   modeSelect.style.display = "none";
   classicOptions.style.display = "none";
   arcadeOptions.style.display = "block";
 };
 document.getElementById("settingsBtn").onclick = () => {
+  gameMode = "menu"; // EXACT LINE: still in menu while selecting
   modeSelect.style.display = "none";
   classicOptions.style.display = "none";
   arcadeOptions.style.display = "none";
@@ -848,7 +868,7 @@ document.getElementById("survivorBtn").onclick = () => {
   menuMusic.currentTime = 0;
 
   pixelateTransition(() => {
-    gameMode = "survivor";
+    gameMode = "survivor"; // EXACT LINE: sets survivor mode active
     hearts = 3;
     kills = 0;
     dead = false;
@@ -860,7 +880,9 @@ document.getElementById("survivorBtn").onclick = () => {
 };
 
 
+
 document.getElementById("backBtn").onclick = () => {
+  gameMode = "menu"; // EXACT LINE: still in menu while selecting
     gamePaused = true;
     dead = false;
     gameMode = "classic";

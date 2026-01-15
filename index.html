@@ -143,6 +143,8 @@ button:hover{opacity:0.85;}
 
 
 <audio id="menuMusic" src="mm.mp3" loop></audio>
+<audio id="btnHover" src="btnhvr.mp3"></audio>
+<audio id="btnClick" src="btnclk.mp3"></audio>
 
 <div id="ui">
   <div><b>Player</b></div>
@@ -187,6 +189,13 @@ canvas.width = innerWidth; canvas.height = innerHeight;
 window.addEventListener('resize',()=>{ canvas.width=innerWidth; canvas.height=innerHeight; });
 
 const menuMusic = document.getElementById('menuMusic');
+function playMenuMusic() {
+    menuMusic.play().catch(() => console.log("Music blocked until user interaction"));
+    window.removeEventListener('mousemove', playMenuMusic);
+}
+
+window.addEventListener('mousemove', playMenuMusic, { once: true });
+
 
 // Wait for first user interaction to play music (browser autoplay fix)
 function playMenuMusic() {
@@ -834,6 +843,20 @@ const modeSelect = document.getElementById("modeSelect");
 const classicOptions = document.getElementById("classicOptions");
 const arcadeOptions = document.getElementById("arcadeOptions");
   const settingsOptions = document.getElementById("settingsOptions");
+
+const btnHoverSound = document.getElementById("btnHover");
+const btnClickSound = document.getElementById("btnClick");
+
+document.querySelectorAll("button").forEach(btn => {
+    btn.addEventListener("mouseenter", () => {
+        btnHoverSound.currentTime = 0;
+        btnHoverSound.play();
+    });
+    btn.addEventListener("click", () => {
+        btnClickSound.currentTime = 0;
+        btnClickSound.play();
+    });
+});
 
 
 document.getElementById("classicBtn").onclick = () => {

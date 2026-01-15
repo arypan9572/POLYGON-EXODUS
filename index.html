@@ -187,8 +187,19 @@ canvas.width = innerWidth; canvas.height = innerHeight;
 window.addEventListener('resize',()=>{ canvas.width=innerWidth; canvas.height=innerHeight; });
 
 const menuMusic = document.getElementById('menuMusic');
-menuMusic.volume = 0.5;
-menuMusic.play().catch(()=>console.log("Menu music will play after user interaction"));
+
+// Wait for first user interaction to play music (browser autoplay fix)
+function playMenuMusic() {
+    menuMusic.play().catch(()=>console.log("Music still blocked"));
+    window.removeEventListener('keydown', playMenuMusic);
+    window.removeEventListener('mousedown', playMenuMusic);
+    window.removeEventListener('touchstart', playMenuMusic);
+}
+
+// Listen for first click or key press
+window.addEventListener('keydown', playMenuMusic);
+window.addEventListener('mousedown', playMenuMusic);
+window.addEventListener('touchstart', playMenuMusic);
 
 /* ==== BACKGROUND ==== */
 const bgImg = new Image(); bgImg.src="bg.png";

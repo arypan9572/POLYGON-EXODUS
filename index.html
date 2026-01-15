@@ -189,26 +189,19 @@ canvas.width = innerWidth; canvas.height = innerHeight;
 window.addEventListener('resize',()=>{ canvas.width=innerWidth; canvas.height=innerHeight; });
 
 const menuMusic = document.getElementById('menuMusic');
-function playMenuMusic() {
-    menuMusic.play().catch(() => console.log("Music blocked until user interaction"));
-    window.removeEventListener('mousemove', playMenuMusic);
+
+// === MENU MUSIC AUTOPLAY FIX ===
+let menuMusicStarted = false;
+function playMenuMusicOnce() {
+  if(!menuMusicStarted){
+    menuMusic.play().catch(()=>console.log("Menu music blocked until click"));
+    menuMusicStarted = true;
+  }
 }
 
-window.addEventListener('mousemove', playMenuMusic, { once: true });
+// Play menu music on first click anywhere
+window.addEventListener("click", playMenuMusicOnce, { once: true });
 
-
-// Wait for first user interaction to play music (browser autoplay fix)
-function playMenuMusic() {
-    menuMusic.play().catch(()=>console.log("Music still blocked"));
-    window.removeEventListener('keydown', playMenuMusic);
-    window.removeEventListener('mousedown', playMenuMusic);
-    window.removeEventListener('touchstart', playMenuMusic);
-}
-
-// Listen for first click or key press
-window.addEventListener('keydown', playMenuMusic);
-window.addEventListener('mousedown', playMenuMusic);
-window.addEventListener('touchstart', playMenuMusic);
 
 /* ==== BACKGROUND ==== */
 const bgImg = new Image(); bgImg.src="bg.png";

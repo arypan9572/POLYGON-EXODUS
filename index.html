@@ -399,7 +399,17 @@ function spawnEnemy(){
   let x = Math.random() < 0.5 ? -20 : canvas.width + 20;
   let y = Math.random() * canvas.height;
 
-  enemies.push({ x, y, r, speed, hp, type });
+enemies.push({
+  x: x,
+  y: y,
+  r: r,
+  speed: speed,
+  hp: hp,
+  type: type,
+  dashCooldown: Math.random() * 200 + 100,
+  explode: type === "tank",
+  split: type === "normal" && Math.random() < 0.08
+});
 }
 
   setInterval(() => {

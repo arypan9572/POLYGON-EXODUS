@@ -556,7 +556,19 @@ function update(){
     }
     player.tokens++;
 }
- evolve(); kills++;  if(gameMode === "survivor" && kills % 150 === 0){   hearts = Math.min(maxHearts, hearts + 1); } combo++; shakeCamera(8); if(mass%20===0)difficulty++; if(combo>1)showCombo(combo); if(combo>=35&&!player.rainbow)player.rainbow=true; }
+evolve();
+kills++;
+
+if(gameMode === "survivor" && kills % 150 === 0){
+    hearts = Math.min(maxHearts, hearts + 1);
+}
+
+combo++;
+shakeCamera(8);
+
+if(mass % 20 === 0) difficulty++;
+if(combo > 1) showCombo(combo);
+if(combo >= 35 && !player.rainbow) player.rainbow = true;
     });
   });
 

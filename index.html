@@ -156,7 +156,7 @@ button:hover{opacity:0.85;}
   <button id="idleBtn">IDLE MODE</button>
   <button id="exitIdleBtn" style="display:none;">EXIT IDLE MODE</button>
   <button id="saveLoadBtn">SAVE / LOAD</button>
-  <button id="backBtn" style="display:none; margin-top:10px;">BACK TO TITLE</button>
+ 
 
 </div>
 
@@ -501,10 +501,12 @@ function triggerDeathScreen(){
   gamePaused = true;
   deathStartTime = performance.now();
 
+  // SHOW BACK BUTTON ONLY FOR SURVIVOR MODE
   if(gameMode === "survivor"){
     document.getElementById("backBtn").style.display = "block";
   }
 }
+
 
 function drawDonut(ctx, time, cx, cy) {
   const R = 120;
@@ -664,40 +666,52 @@ function loop(){
 loop();
 
 /* ==== INPUT ==== */
-window.addEventListener('keydown', e => {     keys[e.key.toLowerCase()] = true;      if(e.key === ' ' && !idleMode) fireSingle();     if(e.key.toLowerCase() === 'h' && !idleMode && hUses>0) { fireSpread(); hUses--; }    window.addEventListener('keydown', e => {
+window.addEventListener('keydown', e => {
+  keys[e.key.toLowerCase()] = true;
+
+  // FIRE
+  if(e.key === ' ' && !idleMode) fireSingle();
+  if(e.key.toLowerCase() === 'h' && !idleMode && hUses>0) { fireSpread(); hUses--; }
+
+  // BACKSPACE / ESC
   if (e.key === "Backspace" || e.key === "Escape") {
 
-    // CLOSE SETTINGS
+    // Close SETTINGS
     if(settingsOptions.style.display === "block"){
       settingsOptions.style.display = "none";
       modeSelect.style.display = "flex";
       return;
     }
 
-    // CLOSE CLASSIC OPTIONS
+    // Close CLASSIC OPTIONS
     if(classicOptions.style.display === "block"){
       classicOptions.style.display = "none";
       modeSelect.style.display = "flex";
       return;
     }
 
-    // CLOSE ARCADE OPTIONS
+    // Close ARCADE OPTIONS
     if(arcadeOptions.style.display === "block"){
       arcadeOptions.style.display = "none";
       modeSelect.style.display = "flex";
       return;
     }
 
-    // CLOSE SURVIVOR DEATH SCREEN
+    // Survivor back button when dead
     if(dead){
       document.getElementById("backBtn").click();
       return;
     }
 
-    // TOGGLE PAUSE if in game
+    // Toggle pause if in game
     gamePaused = !gamePaused;
   }
 });
+
+window.addEventListener('keyup', e => { 
+  keys[e.key.toLowerCase()] = false; 
+});
+
   window.addEventListener('keyup', e => {     keys[e.key.toLowerCase()] = false; });
 window.addEventListener('keyup',e=>{ keys[e.key.toLowerCase()]=false; });
 
@@ -811,13 +825,7 @@ document.getElementById("settingsBtn").onclick = () => {
   arcadeOptions.style.display = "none";
   settingsOptions.style.display = "block";
 };
-// Close SETTINGS menu with Backspace or Esc
-window.addEventListener('keydown', e => {
-  if ((e.key === "Backspace" || e.key === "Escape") && settingsOptions.style.display === "block") {
-    settingsOptions.style.display = "none";
-    modeSelect.style.display = "flex"; // show arcade/classic buttons again
-  }
-});
+
 
   
 document.getElementById('startBtn').onclick = () => {

@@ -565,7 +565,9 @@ function draw(){
   ctx.save();
   const shakeX=(Math.random()-0.5)*shakeAmount, shakeY=(Math.random()-0.5)*shakeAmount;
   ctx.translate(shakeX,shakeY); shakeAmount*=0.9;
-  ctx.fillStyle = colorMode === "light"   ? "rgba(255,255,255,0.35)"   : "rgba(11,11,11,0.25)"; ctx.fillRect(0,0,canvas.width,canvas.height);
+ ctx.fillStyle = colorMode === "light" ? "#fff" : "#000"; // solid background
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+
   if(bgImg.complete){ ctx.globalAlpha=0.25; ctx.drawImage(bgImg,bgObj.x-bgObj.size/2,bgObj.y-bgObj.size/2,bgObj.size,bgObj.size); ctx.globalAlpha=1; }
   if(bgImg2.complete){ ctx.globalAlpha=0.25; ctx.drawImage(bgImg2,bgObj2.x-bgObj2.size/2,bgObj2.y-bgObj2.size/2,bgObj2.size,bgObj2.size); ctx.globalAlpha=1; }
   drawPlayerShape();
@@ -576,8 +578,9 @@ bullets.forEach(b => {
     : (colorMode === "light" ? "#000" : "#fff"); // black for light mode, white for dark mode
 
   // Add a soft glow so bullets pop through VHS
-  ctx.shadowColor = "#fff"; // white glow
-  ctx.shadowBlur = 4;
+ctx.shadowColor = colorMode === "light" ? "#000" : "#fff"; // glow matches bullet color
+ctx.shadowBlur = 6; // more visible through VHS
+
 
   // Draw the bullet as a tiny square
   ctx.fillStyle = baseColor;
@@ -661,8 +664,41 @@ function loop(){
 loop();
 
 /* ==== INPUT ==== */
-window.addEventListener('keydown', e => {     keys[e.key.toLowerCase()] = true;      if(e.key === ' ' && !idleMode) fireSingle();     if(e.key.toLowerCase() === 'h' && !idleMode && hUses>0) { fireSpread(); hUses--; }      if(e.key === "Backspace"){  // toggle pause        
-  gamePaused = !gamePaused;     } });  window.addEventListener('keyup', e => {     keys[e.key.toLowerCase()] = false; });
+window.addEventListener('keydown', e => {     keys[e.key.toLowerCase()] = true;      if(e.key === ' ' && !idleMode) fireSingle();     if(e.key.toLowerCase() === 'h' && !idleMode && hUses>0) { fireSpread(); hUses--; }    window.addEventListener('keydown', e => {
+  if (e.key === "Backspace" || e.key === "Escape") {
+
+    // CLOSE SETTINGS
+    if(settingsOptions.style.display === "block"){
+      settingsOptions.style.display = "none";
+      modeSelect.style.display = "flex";
+      return;
+    }
+
+    // CLOSE CLASSIC OPTIONS
+    if(classicOptions.style.display === "block"){
+      classicOptions.style.display = "none";
+      modeSelect.style.display = "flex";
+      return;
+    }
+
+    // CLOSE ARCADE OPTIONS
+    if(arcadeOptions.style.display === "block"){
+      arcadeOptions.style.display = "none";
+      modeSelect.style.display = "flex";
+      return;
+    }
+
+    // CLOSE SURVIVOR DEATH SCREEN
+    if(dead){
+      document.getElementById("backBtn").click();
+      return;
+    }
+
+    // TOGGLE PAUSE if in game
+    gamePaused = !gamePaused;
+  }
+});
+  window.addEventListener('keyup', e => {     keys[e.key.toLowerCase()] = false; });
 window.addEventListener('keyup',e=>{ keys[e.key.toLowerCase()]=false; });
 
 /* ==== IDLE MODE ==== */

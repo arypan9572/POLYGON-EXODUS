@@ -200,6 +200,21 @@ let dead = false;
 let deathStartTime = 0;
 let scoreDisplay = 0;
 
+// ===== DONUT (TORUS) PARTICLES =====
+const donutParticles = [];
+const DONUT_COUNT = 900;
+
+for (let i = 0; i < DONUT_COUNT; i++) {
+  donutParticles.push({
+    theta: Math.random() * Math.PI * 2,
+    phi: Math.random() * Math.PI * 2,
+    speed: Math.random() * 0.002 + 0.001,
+    size: Math.random() * 1.5 + 0.8,
+    hue: Math.random() * 360
+  });
+}
+
+
 
 /* ==== BLUE CUBE ==== */
   const blueCubeImg = new Image();
@@ -473,6 +488,60 @@ function triggerDeathScreen(){
   }
 }
 
+function drawDonut(ctx, time, cx, cy) {
+  const R = 120;
+  const r = 55;
+
+  donutParticles.forEach(p => {
+    p.theta += p.speed * 2;
+    p.phi += p.speed;
+
+    const x3D = (R + r * Math.cos(p.phi)) * Math.cos(p.theta);
+    const y3D = (R + r * Math.cos(p.phi)) * Math.sin(p.theta);
+    const z3D = r * Math.sin(p.phi);
+
+    const scale = 0.7 + z3D / 160;
+    const x2D = cx + x3D * scale;
+    const y2D = cy + y3D * scale;
+
+    ctx.beginPath();
+    ctx.fillStyle = `hsla(${p.hue + time * 0.05}, 100%, 60%, 0.85)`;
+    ctx.arc(x2D, y2D, p.size * scale, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+function drawVHS(ctx, w, h, time) {
+
+  ctx.fillStyle = "rgba(0,0,0,0.15)";
+  for (let y = 0; y < h; y += 3) {
+    ctx.fillRect(0, y, w, 1);
+  }
+
+  const shift = Math.sin(time * 0.004) * 2;
+  ctx.globalCompositeOperation = "screen";
+
+  ctx.drawImage(canvas, shift, 0);
+  ctx.drawImage(canvas, -shift, 0);
+
+  ctx.globalCompositeOperation = "source-over";
+
+  for (let i = 0; i < 200; i++) {
+    const x = Math.random() * w;
+    const y = Math.random() * h;
+    ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.04})`;
+    ctx.fillRect(x, y, 1, 1);
+  }
+
+  const grad = ctx.createRadialGradient(
+    w/2, h/2, w*0.2,
+    w/2, h/2, w*0.7
+  );
+  grad.addColorStop(0, "rgba(0,0,0,0)");
+  grad.addColorStop(1, "rgba(0,0,0,0.4)");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+}
 
 function draw(){
   ctx.save();
@@ -485,6 +554,7 @@ function draw(){
   bullets.forEach(b=>{ ctx.fillStyle=b.rainbow?`hsl(${Date.now()%360},100%,50%)`:'#fff'; ctx.fillRect(b.x,b.y,3,3); });
   enemies.forEach(e=>{ ctx.fillStyle='red'; ctx.beginPath(); ctx.arc(e.x,e.y,e.r,0,Math.PI*2); ctx.fill(); });
   particles.forEach(p=>{ ctx.fillStyle=`rgba(255,0,0,${p.alpha})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill(); });
+  drawDonut(ctx, performance.now(), canvas.width / 2, canvas.height / 2);
   drawBlueCube();
   
 /* ==== SURVIVOR DEATH SCREEN ==== */
@@ -518,8 +588,10 @@ if(dead){
   );
 
   ctx.globalAlpha = 1;
-}
+}  
+  drawVHS(ctx, canvas.width, canvas.height, performance.now());
   ctx.restore();
+
 }
   
 

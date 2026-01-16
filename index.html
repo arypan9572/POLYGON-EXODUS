@@ -507,19 +507,22 @@ switch(e.type){
         if(!e.splitDelay) e.splitDelay = 15; // frames to pause before splitting
         e.splitDelay--;
         if(e.splitDelay <= 0){
-            for(let j=0;j<2;j++){
-                const angle = Math.random()*Math.PI*2;
-                enemies.push({
-                    x: e.x + Math.cos(angle)*10,
-                    y: e.y + Math.sin(angle)*10,
-                    r: e.r * 0.5,         // HALF size
-                    speed: e.speed * 1.5,
-                    type: "splitterChild", // new type to stay green
-                    hp: 1,
-                    orbitAngle: 0,
-                    hasSplit: false
-                });
-            }
+           for(let j=0;j<2;j++){
+    const angle = Math.random()*Math.PI*2;
+    enemies.push({
+        x: e.x + Math.cos(angle)*40, // farther split (was 10)
+        y: e.y + Math.sin(angle)*40, // farther split
+        r: e.r * 0.5,                // still half the parent size
+        speed: e.speed * 1.5,        // 1.5x faster
+        type: "splitterChild",
+        hp: 1,
+        orbitAngle: 0,
+        hasSplit: false,
+        dx: 0,                       // placeholder for velocity
+        dy: 0
+    });
+}
+
             e.hasSplit = true;
             enemies.splice(i,1);
         }
@@ -587,6 +590,15 @@ if(dist < player.r + e.r){
         shakeCamera(5);
         enemies.splice(i,1);
     }
+}
+
+  // Make splitter children move toward the player
+if(e.type === "splitterChild"){
+    const dx = player.x - e.x;
+    const dy = player.y - e.y;
+    const dist = Math.hypot(dx, dy) || 1; // prevent divide by zero
+    e.x += dx / dist * e.speed;
+    e.y += dy / dist * e.speed;
 }
 
 // REMOVE OFFSCREEN

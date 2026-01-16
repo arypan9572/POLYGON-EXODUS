@@ -211,7 +211,8 @@ window.addEventListener("click", playMenuMusicOnce, { once: true });
 /* ==== BACKGROUND ==== */
 const bgImg = new Image(); bgImg.src="bg.png";
 const bgImg2 = new Image(); bgImg2.src="goonerola.png";
-const bgObj={x:canvas.width/2,y:canvas.height/2,vx:(Math.random()*0.6+0.2)*(Math.random()<0.5?-1:1),vy:(Math.random()*0.6+0.2)*(Math.random()<0.5?-1:1),size:39};
+const bgObj={x:canvas.width/2,y:canvas.height/2,vx:(Math.random()*0.6+0.2)*(Math.random()<0.5?-1:1),vy:(Math.random()*0.6+0.2)*(Math.random()<0.5?-1:1),size:39,angle: 0,
+};
 const bgObj2={x:Math.random()*canvas.width,y:Math.random()*canvas.height,vx:(Math.random()*0.7+0.3)*(Math.random()<0.5?-1:1),vy:(Math.random()*0.7+0.3)*(Math.random()<0.5?-1:1),size:36};
 
 /* ==== PLAYER ==== */
@@ -226,6 +227,8 @@ let colorMode = "dark"; // "dark" or "light"
 let bullets=[],enemies=[],particles=[];
 let keys={},idleMode=false,idleInterval=null;
 let combo=0,mass=0,difficulty=1,hUses=12;
+let survivorStreak = 0;
+
 
 // ==== SURVIVOR MODE ====
 let gameMode = "classic"; // "classic" or "survivor"
@@ -432,6 +435,7 @@ function renderHearts(){
 }
 
 function update(){
+  let slowMo = (gameMode === "survivor" && hearts === 1);
   if(dead) return;
 
   const now=performance.now();
@@ -443,7 +447,10 @@ function update(){
 
   enemies.forEach((e,i)=>{
     const dx=player.x-e.x, dy=player.y-e.y, d=Math.hypot(dx,dy)||1;
-    e.x+=dx/d*e.speed; e.y+=dy/d*e.speed;
+  const speedMult = slowMo ? 0.5 : 1;
+e.x += dx/d * e.speed * speedMult;
+e.y += dy/d * e.speed * speedMult;
+
    if(d < player.r + e.r){
   if(gameMode === "survivor"){
     if(!invulnerable){
@@ -462,6 +469,7 @@ function update(){
     currentShapeSides = shapeOrder[Math.max(0, idx - 3)];
     restartIdleIfActive();
     combo = 0;
+    survivorStreak = 0;
     player.rainbow = false;
     shakeCamera(5);
     enemies.splice(i,1);
@@ -482,7 +490,20 @@ function update(){
     }
     player.tokens++;
 }
- evolve(); kills++;  if(gameMode === "survivor" && kills % 150 === 0){   hearts = Math.min(maxHearts, hearts + 1); } combo++; shakeCamera(8); if(mass%20===0)difficulty++; if(combo>1)showCombo(combo); if(combo>=35&&!player.rainbow)player.rainbow=true; }
+ evolve(); kills++;  if(gameMode === "survivor" && kills % 150 === 0){   hearts = Math.min(maxHearts, hearts + 1); } combo++;
+
+if (gameMode === "survivor") {
+  survivorStreak++;
+
+  if (survivorStreak === 10) {
+    player.rainbow = true;
+  }
+
+  if (survivorStreak === 20) {
+    hearts = Math.min(maxHearts, hearts + 1);
+  }
+}
+ shakeCamera(8); if(mass%20===0)difficulty++; if(combo>1)showCombo(combo); if(combo>=35&&!player.rainbow)player.rainbow=true; }
     });
   });
 
@@ -568,7 +589,8 @@ function drawDonut(ctx, time, cx, cy) {
 
 function drawVHS(ctx, w, h, time) {
 
-  ctx.fillStyle = "rgba(0,0,0,0.15)";
+ const danger = Math.min(enemies.length / 15, 1);
+ctx.fillStyle = `rgba(0,0,0,${0.15 + danger * 0.25})`;
   for (let y = 0; y < h; y += 3) {
     ctx.fillRect(0, y, w, 1);
   }
@@ -605,7 +627,14 @@ function draw(){
  ctx.fillStyle = colorMode === "light" ? "#fff" : "#000"; // solid background
 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  if(bgImg.complete){ ctx.globalAlpha=0.25; ctx.drawImage(bgImg,bgObj.x-bgObj.size/2,bgObj.y-bgObj.size/2,bgObj.size,bgObj.size); ctx.globalAlpha=1; }
+  if(bgImg.complete){ ctx.globalAlpha=0.25; bgObj.angle += 0.002;
+
+ctx.save();
+ctx.translate(bgObj.x, bgObj.y);
+ctx.rotate(bgObj.angle);
+ctx.drawImage(bgImg, -bgObj.size/2, -bgObj.size/2, bgObj.size, bgObj.size);
+ctx.restore();
+ ctx.globalAlpha=1; }
   if(bgImg2.complete){ ctx.globalAlpha=0.25; ctx.drawImage(bgImg2,bgObj2.x-bgObj2.size/2,bgObj2.y-bgObj2.size/2,bgObj2.size,bgObj2.size); ctx.globalAlpha=1; }
   drawPlayerShape();
 bullets.forEach(b => {
@@ -665,6 +694,14 @@ if(dead){
     canvas.width/2,
     canvas.height/2 + 40
   );
+
+ctx.font = "20px SF Pro Display";
+ctx.fillText(
+  `Streak Bonus: ${survivorStreak}`,
+  canvas.width/2,
+  canvas.height/2 + 80
+);
+
 
   ctx.globalAlpha = 1;
 }  

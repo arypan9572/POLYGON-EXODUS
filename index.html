@@ -110,15 +110,11 @@ button:hover{opacity:0.85;}
   <div style="display:flex; gap:80px;">
     <button id="classicBtn" style="width:180px;">CLASSIC</button>
     <button id="arcadeBtn" style="width:180px;">ARCADE</button>
-    <button id="cheatsBtn">CHEATCODES</button>
-    <button id="creditsBtn">CREDITS</button>
-
   </div>
 
   <button id="settingsBtn" style="width:100px; font-size:16px; margin-top:20px;">
     SETTINGS
   </button>
-
 
 </div>
 
@@ -142,25 +138,7 @@ button:hover{opacity:0.85;}
 <div id="settingsOptions" style="display:none; margin-top:40px; width:240px;">
   <button id="lightModeBtn">LIGHT MODE</button>
   <button id="darkModeBtn">DARK MODE</button>
-  <button id="achievementsBtn">ACHIEVEMENTS</button>
 </div>
-
-
-<!-- CHEAT INPUT SCREEN -->
-<div id="cheatScreen" style="
-  display:none;
-  position:fixed;
-  inset:0;
-  background:#000;
-  z-index:2000;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-">
-  <input id="cheatInput" placeholder="enter cheat code" style="padding:10px;font-size:18px;">
-  <button id="cheatSubmit" style="margin-top:10px;">OK</button>
-</div>
-
 
 </div>
 
@@ -189,8 +167,8 @@ button:hover{opacity:0.85;}
 
 </div>
 
-<canvas id="transitionCanvas" style="position:fixed;inset:0;z-index:1500;pointer-events:none;display:none;">
-<canvas id="game">
+<canvas id="transitionCanvas" style="position:fixed;inset:0;z-index:1500;pointer-events:none;display:none;"></canvas>
+<canvas id="game"></canvas>
 
 <div id="heartsUI"></div>
 
@@ -265,16 +243,6 @@ let invulnTimer = 0;
 let dead = false;
 let deathStartTime = 0;
 let scoreDisplay = 0;
-// CHEATS
-let cheat_extraHeart = false;
-
-// ACHIEVEMENTS
-const achievements = {
-  firstKill: false,
-  survivor50: false,
-  achieveMore: false
-};
-
 
 // ===== DONUT (TORUS) PARTICLES =====
 const donutParticles = [];
@@ -522,10 +490,7 @@ e.y += dy/d * e.speed * speedMult;
     }
     player.tokens++;
 }
- evolve(); kills++; 
-if (kills === 1) achievements.firstKill = true;
-if (kills === 50 && gameMode === "survivor") achievements.survivor50 = true;
-if(gameMode === "survivor" && kills % 150 === 0){   hearts = Math.min(maxHearts, hearts + 1); } combo++;
+ evolve(); kills++;  if(gameMode === "survivor" && kills % 150 === 0){   hearts = Math.min(maxHearts, hearts + 1); } combo++;
 
 if (gameMode === "survivor") {
   survivorStreak++;
@@ -950,15 +915,6 @@ document.getElementById("settingsBtn").onclick = () => {
   settingsOptions.style.display = "block";
 };
 
-document.getElementById("cheatsBtn").onclick = () => {
-  cheatScreen.style.display = "flex";
-};
-
-document.getElementById("creditsBtn").onclick = () => {
-  alert("POLYGON EXODUS\nCreated by You\nThanks for playing!");
-};
-
-
 
   
 document.getElementById('hardBtn').onclick = () => {
@@ -986,7 +942,6 @@ document.getElementById("survivorBtn").onclick = () => {
   pixelateTransition(() => {
     gameMode = "survivor";
     hearts = 3;
-    if (cheat_extraHeart) hearts++;
     kills = 0;
     dead = false;
     invulnerable = false;
@@ -1003,7 +958,6 @@ document.getElementById("backBtn").onclick = () => {
   dead = false;
   gameMode = "classic";
   hearts = 3;
-  cheat_extraHeart = false;
   kills = 0;
   invulnerable = false;
   scoreDisplay = 0;
@@ -1031,36 +985,6 @@ document.getElementById("lightModeBtn").onclick = () => {
 document.getElementById("darkModeBtn").onclick = () => {
   colorMode = "dark";
 };
-document.getElementById("achievementsBtn").onclick = () => {
-  let text = "ACHIEVEMENTS\n\n";
-  for (let a in achievements) {
-    text += `${a}: ${achievements[a] ? "✔" : "🔒"}\n`;
-  }
-  alert(text);
-};
-
-
-const cheatScreen = document.getElementById("cheatScreen");
-const cheatInput = document.getElementById("cheatInput");
-const cheatSubmit = document.getElementById("cheatSubmit");
-
-cheatSubmit.onclick = () => {
-  const code = cheatInput.value.trim();
-
-  if (code === "-gimmeaheart-") {
-    cheat_extraHeart = true;
-    alert("Extra heart will apply in Survivor");
-  }
-
-  if (code === "achieve_more") {
-    achievements.achieveMore = true;
-    alert("Achievement unlocked: Achieve More");
-  }
-
-  cheatInput.value = "";
-  cheatScreen.style.display = "none";
-};
-
  
 </script>
 </body>

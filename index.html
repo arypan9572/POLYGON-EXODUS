@@ -790,6 +790,12 @@ else if(e.type === "splitter"){
   ctx.ellipse(0, 0, e.r*1.2, e.r*0.8, 0, 0, Math.PI*2);
   ctx.fill();
 } 
+else if(e.type === "splitterChild"){
+  ctx.fillStyle = '#5bb450'; // same color as parent
+  ctx.beginPath();
+  ctx.arc(0, 0, e.r, 0, Math.PI*2); // plain circle
+  ctx.fill();
+}
 else if(e.type === "orbital"){
   ctx.fillStyle = '#4E9FE5';
   const spikes = 8;

@@ -790,6 +790,20 @@ ctx.save();
 ctx.translate(e.x, e.y);
 ctx.rotate(player.angle); // make enemy rotate like player
 
+// Add glow for enemy
+let glowColor;
+switch(e.type){
+    case "normal": glowColor = "rgba(255,0,0,0.25)"; break;
+    case "splitter": 
+    case "splitterChild": glowColor = "rgba(91,180,80,0.25)"; break;
+    case "orbital": glowColor = "rgba(78,159,229,0.25)"; break;
+    case "tank": glowColor = "rgba(175,105,238,0.25)"; break;
+    default: glowColor = "rgba(255,255,255,0.25)";
+}
+ctx.shadowColor = glowColor;
+ctx.shadowBlur = 6; // blueCube has 12, so half
+
+
 if(e.type === "normal"){
   ctx.fillStyle = 'red';
   ctx.beginPath();

@@ -530,19 +530,33 @@ switch(e.type){
         break;
 
     case "orbital":
-        const orbitRadius = 80;
-        if(!e.orbitCount) e.orbitCount = Math.floor(Math.random()*2)+1; // 1-2 orbits
-        if(!e.orbitProgress) e.orbitProgress = 0;
+    const orbitTriggerDist = 150;  // distance to start orbiting
+    const orbitRadius = 80;        // radius of orbit
+    const orbitSpeed = 0.03;       // slow orbit speed
+    const homeSpeedMult = 2;       // after orbit, moves faster
 
-        if(e.orbitProgress < e.orbitCount * Math.PI * 2){
-            e.orbitProgress += 0.03; // slower orbit speed
-            e.x = player.x + Math.cos(e.orbitProgress) * orbitRadius;
-            e.y = player.y + Math.sin(e.orbitProgress) * orbitRadius;
-        } else {
-            e.x += dx/dist * e.speed * speedMult;
-            e.y += dy/dist * e.speed * speedMult;
-        }
-        break;
+    if(!e.startedOrbit && dist < orbitTriggerDist){
+        // Start orbiting
+        e.startedOrbit = true;
+        e.orbitProgress = 0;
+        e.orbitCount = Math.floor(Math.random()*2)+1; // 1 or 2 full orbits
+    }
+
+    if(e.startedOrbit && e.orbitProgress < e.orbitCount * Math.PI * 2){
+        // Orbiting phase
+        e.orbitProgress += orbitSpeed;
+        e.x = player.x + Math.cos(e.orbitProgress) * orbitRadius;
+        e.y = player.y + Math.sin(e.orbitProgress) * orbitRadius;
+    } else if(e.startedOrbit && e.orbitProgress >= e.orbitCount * Math.PI * 2){
+        // Orbit finished, home in quickly
+        e.x += dx/dist * e.speed * speedMult * homeSpeedMult;
+        e.y += dy/dist * e.speed * speedMult * homeSpeedMult;
+    } else {
+        // Normal movement toward player
+        e.x += dx/dist * e.speed * speedMult;
+        e.y += dy/dist * e.speed * speedMult;
+    }
+    break;
 
     case "tank":
         e.x += dx/dist * e.speed * speedMult;

@@ -290,7 +290,7 @@ function updateBlueCube(deltaTime){
   }
 }
 function drawBlueCube(){
-  if(!blueCube || !blueCubeImg.complete) return;
+  if(!blueCube || !blueCubeImg.complete) continue;
 
   blueCube.angle += 0.05;
 
@@ -460,7 +460,7 @@ function getShapeName(sides){
 function renderHearts(){
   const ui = document.getElementById("heartsUI");
   ui.innerHTML = "";
-  if(gameMode !== "survivor") return;
+  if(gameMode !== "survivor") continue;
 
   for(let i = 0; i < hearts; i++){
     const h = document.createElement("div");
@@ -471,7 +471,7 @@ function renderHearts(){
 
 function update(){
   let slowMo = (gameMode === "survivor" && hearts === 1);
-  if(dead) return;
+  if(dead) continue;
 
   const now=performance.now();
   if(!idleMode){ if(keys.w)player.y-=4; if(keys.s)player.y+=4; if(keys.a)player.x-=4; if(keys.d)player.x+=4; }
@@ -479,7 +479,8 @@ function update(){
   player.angle+=0.08;
 
   bullets.forEach((b,i)=>{ b.x+=b.vx; b.y+=b.vy; if(b.x<0||b.x>canvas.width||b.y<0||b.y>canvas.height) bullets.splice(i,1); });
-enemies.forEach((e,i)=>{
+for (let i = enemies.length - 1; i >= 0; i--) {
+  const e = enemies[i];
   const dx = player.x - e.x;
   const dy = player.y - e.y;
   const d = Math.hypot(dx,dy) || 1;
@@ -499,11 +500,11 @@ enemies.forEach((e,i)=>{
           baseSpeed: e.speed * 1.5,
           hp: 1,
           damage: 1
-        });
+        }
       }
 
       enemies.splice(i,1);
-      return;
+      continue;
     }
   }
 
@@ -522,7 +523,7 @@ enemies.forEach((e,i)=>{
       if (e.orbitAngle >= Math.PI * 2) {
         e.state = "attack";
       }
-      return;
+      continue;
     }
   }
 
@@ -880,27 +881,27 @@ window.addEventListener('keydown', e => {
     if(settingsOptions.style.display === "block"){
       settingsOptions.style.display = "none";
       modeSelect.style.display = "flex";
-      return;
+      continue;
     }
 
     // Close CLASSIC OPTIONS
     if(classicOptions.style.display === "block"){
       classicOptions.style.display = "none";
       modeSelect.style.display = "flex";
-      return;
+      continue;
     }
 
     // Close ARCADE OPTIONS
     if(arcadeOptions.style.display === "block"){
       arcadeOptions.style.display = "none";
       modeSelect.style.display = "flex";
-      return;
+      continue;
     }
 
     // Survivor back button when dead
     if(dead){
       document.getElementById("backBtn").click();
-      return;
+      continue;
     }
 
     // Toggle pause if in game
@@ -936,7 +937,7 @@ function restartIdleIfActive(){
 }
 
 document.getElementById('idleBtn').onclick=()=>{
-  if(idleMode) return;
+  if(idleMode) continue;
   idleMode = true;
 
   document.getElementById('idleBtn').style.display='none';

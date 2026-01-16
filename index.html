@@ -477,25 +477,55 @@ function update(){
   const speedMult = slowMo ? 0.5 : 1;
     switch(e.type){
   case "splitter":
-    if(!e.split && Math.hypot(player.x-e.x, player.y-e.y) < 120){
-      // slow down near player
-      e.speed = 0.3;
-      e.split = true;
+   // --- SPLITTER IMPROVEMENTS ---
+// All splitter parts same color
+ctx.strokeStyle = "#ff8800"; // keeps them orange
+ctx.lineWidth = 2;
+
+// Make initial splitter an oval
+e.rX = e.r * 1.5; // x radius
+e.rY = e.r;       // y radius
+
+// Make them split much farther and repeat split
+if(!e.split && Math.hypot(player.x-e.x, player.y-e.y) < 200){
+    e.speed = 0.2;  // slow down more near player
+    e.split = true;
+}
+
+if(e.split && Math.hypot(player.x-e.x, player.y-e.y) < 50){
+    // spawn smaller circles farther (5x)
+    for(let dx of [-50,50]){
+        for(let dy of [-50,50]){
+            enemies.push({x:e.x+dx, y:e.y+dy, r:6, hp:1, speed:1, type:"normal"});
+        }
     }
-    if(e.split && Math.hypot(player.x-e.x, player.y-e.y) < 40){
-      // split into 2 smaller circles
-      enemies.push({x:e.x+10, y:e.y, r:6, hp:1, speed:1, type:"normal"});
-      enemies.push({x:e.x-10, y:e.y, r:6, hp:1, speed:1, type:"normal"});
-      enemies.splice(i,1);
-    }
-    break;
+    enemies.splice(i,1);
+}
+
 
   case "orbital":
-    // orbit around player
+    // Spawn offscreen if needed
+if(!e.spawned){
+    const side = Math.random()<0.5 ? -50 : canvas.width+50;
+    e.x = side;
+    e.y = Math.random() * canvas.height;
+    e.spawned = true;
+}
+
+// Make orbital spiky (just a visual change)
+e.spikes = 6 + Math.floor(Math.random()*4);
+
+// Orbit once or twice randomly before attack
+if(!e.orbitCount) e.orbitCount = 1 + Math.floor(Math.random()*2);
+if(e.orbitCount>0){
     e.angle += e.orbitSpeed;
     e.x = player.x + Math.cos(e.angle) * e.orbitRadius;
     e.y = player.y + Math.sin(e.angle) * e.orbitRadius;
-    break;
+    e.orbitCount--;
+} else {
+    // start attacking (normal dx/dy code)
+}
+
 
   case "tank":
     // tanks are slower; movement already handled by speedMult

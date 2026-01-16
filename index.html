@@ -292,7 +292,6 @@ function updateBlueCube(deltaTime){
 function drawBlueCube(){
   if(!blueCube || !blueCubeImg.complete) return;
 
-
   blueCube.angle += 0.05;
 
   ctx.save();
@@ -367,49 +366,14 @@ function evolve(){
 }
 
 /* ==== ENEMIES ==== */
-  const ENEMY_TYPES = {
-  NORMAL: "normal",
-  SPLITTER: "splitter",
-  ORBITAL: "orbital",
-  TANK: "tank"
-};
-
-function spawnEnemy(type = null, xOverride = null, yOverride = null) {
-  let x = xOverride ?? (Math.random()<0.5?-20:canvas.width+20);
-  let y = yOverride ?? (Math.random()*canvas.height);
-
-  if (!type) {
-    const roll = Math.random();
-    if (roll < 0.55) type = ENEMY_TYPES.NORMAL;
-    else if (roll < 0.75) type = ENEMY_TYPES.SPLITTER;
-    else if (roll < 0.9) type = ENEMY_TYPES.ORBITAL;
-    else type = ENEMY_TYPES.TANK;
-  }
-
-  let enemy = {
-    x, y,
-    type,
-    r: 8,
-    hp: 1,
-    speed: 0.7 + difficulty*0.2,
-    baseSpeed: 0.7 + difficulty*0.2,
-    damage: 1,
-    state: "approach",
-    orbitAngle: 0,
-    splitDone: false
-  };
-
-  if (hardMode) enemy.speed *= 1.7;
-
-  if (type === ENEMY_TYPES.TANK) {
-    enemy.r *= 2;
-    enemy.speed *= 0.5;
-    enemy.damage = 2;
-  }
-
-  enemies.push(enemy);
+function spawnEnemy(){
+  const r = 8;
+  let x = Math.random()<0.5?-20:canvas.width+20;
+  let y = Math.random()*canvas.height;
+  let speed = 0.7 + difficulty*0.2;
+  if(hardMode) speed *= 1.7;
+  enemies.push({x,y,r,hp:1,speed});
 }
-
   setInterval(() => {
     if(!gamePaused && !dead && gameMode !== "menu") spawnEnemy();
 }, 800);
@@ -480,79 +444,38 @@ function update(){
   player.angle+=0.08;
 
   bullets.forEach((b,i)=>{ b.x+=b.vx; b.y+=b.vy; if(b.x<0||b.x>canvas.width||b.y<0||b.y>canvas.height) bullets.splice(i,1); });
-for (let i = enemies.length - 1; i >= 0; i--) {
-  const e = enemies[i];
-  const dx = player.x - e.x;
-  const dy = player.y - e.y;
-  const d = Math.hypot(dx,dy) || 1;
 
-  /* ==== SPLITTER ==== */
-  if (e.type === ENEMY_TYPES.SPLITTER && !e.splitDone) {
-    if (d < 160) {
-      e.splitDone = true;
+  enemies.forEach((e,i)=>{
+    const dx=player.x-e.x, dy=player.y-e.y, d=Math.hypot(dx,dy)||1;
+  const speedMult = slowMo ? 0.5 : 1;
+e.x += dx/d * e.speed * speedMult;
+e.y += dy/d * e.speed * speedMult;
 
-      for (let k = 0; k < 2; k++) {
-       enemies.push({
-          x: e.x,
-          y: e.y,
-          type: ENEMY_TYPES.NORMAL,
-          r: e.r * 0.75,
-          speed: e.speed * 1.5,
-          baseSpeed: e.speed * 1.5,
-          hp: 1,
-          damage: 1
-        });
+   if(d < player.r + e.r){
+  if(gameMode === "survivor"){
+    if(!invulnerable){
+      hearts--;
+      invulnerable = true;
+      invulnTimer = 120; // ~2 seconds
+      shakeCamera(12);
 
+      if(hearts <= 0){
+        triggerDeathScreen();
       }
-
-      enemies.splice(i,1);
-      continue;
     }
+    enemies.splice(i,1);
+  } else {
+    const idx = shapeOrder.indexOf(currentShapeSides);
+    currentShapeSides = shapeOrder[Math.max(0, idx - 3)];
+    restartIdleIfActive();
+    combo = 0;
+    survivorStreak = 0;
+    player.rainbow = false;
+    shakeCamera(5);
+    enemies.splice(i,1);
   }
+}
 
-  /* ==== ORBITAL ==== */
-  if (e.type === ENEMY_TYPES.ORBITAL) {
-    if (e.state === "approach" && d < 140) {
-      e.state = "orbit";
-      e.orbitAngle = Math.atan2(dy,dx);
-    }
-
-    if (e.state === "orbit") {
-      e.orbitAngle += 0.15;
-      e.x = player.x + Math.cos(e.orbitAngle) * 140;
-      e.y = player.y + Math.sin(e.orbitAngle) * 140;
-
-      if (e.orbitAngle >= Math.PI * 2) {
-        e.state = "attack";
-      }
-      continue;
-    }
-  }
-
-  /* ==== MOVE TOWARD PLAYER ==== */
-  const speedMult = (gameMode === "survivor" && hearts === 1) ? 0.5 : 1;
-  e.x += dx/d * e.speed * speedMult;
-  e.y += dy/d * e.speed * speedMult;
-
-  /* ==== COLLISION ==== */
-  if (d < player.r + e.r) {
-    if (gameMode === "survivor") {
-      if (!invulnerable) {
-        hearts -= e.damage;
-        invulnerable = true;
-        invulnTimer = 120;
-        shakeCamera(12);
-        if (hearts <= 0) triggerDeathScreen();
-      }
-      enemies.splice(i,1);
-    } else {
-      shakeCamera(6);
-      enemies.splice(i,1);
-    }
-  }
-});
-
-   
     if(e.x<-50||e.x>canvas.width+50||e.y<-50||e.y>canvas.height+50) enemies.splice(i,1);
   });
 
@@ -735,49 +658,7 @@ ctx.shadowBlur = 6; // more visible through VHS
 
 
 
-enemies.forEach(e=>{
-  ctx.save();
-  ctx.translate(e.x,e.y);
-  ctx.fillStyle = "red"; // SAME COLOR FOR ALL
-
-  // NORMAL
-  if (e.type === ENEMY_TYPES.NORMAL) {
-    ctx.beginPath();
-    ctx.arc(0,0,e.r,0,Math.PI*2);
-    ctx.fill();
-  }
-
-  // SPLITTER (OVAL)
-  else if (e.type === ENEMY_TYPES.SPLITTER) {
-    ctx.scale(1.6,1);
-    ctx.beginPath();
-    ctx.arc(0,0,e.r,0,Math.PI*2);
-    ctx.fill();
-  }
-
-  // ORBITAL (SPIKE BALL)
-  else if (e.type === ENEMY_TYPES.ORBITAL) {
-    const spikes = 10;
-    ctx.beginPath();
-    for(let i=0;i<spikes*2;i++){
-      const r = i%2===0 ? e.r*1.6 : e.r;
-      const a = i*Math.PI/spikes;
-      ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);
-    }
-    ctx.closePath();
-    ctx.fill();
-  }
-
-  // TANK
-  else if (e.type === ENEMY_TYPES.TANK) {
-    ctx.beginPath();
-    ctx.arc(0,0,e.r,0,Math.PI*2);
-    ctx.fill();
-  }
-
-  ctx.restore();
-});
-
+  enemies.forEach(e=>{ ctx.fillStyle='red'; ctx.beginPath(); ctx.arc(e.x,e.y,e.r,0,Math.PI*2); ctx.fill(); });
   particles.forEach(p=>{ ctx.fillStyle=`rgba(255,0,0,${p.alpha})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill(); });
   drawDonut(ctx, performance.now(), canvas.width / 2, canvas.height / 2);
   drawBlueCube();
@@ -927,7 +808,7 @@ function restartIdleIfActive(){
 }
 
 document.getElementById('idleBtn').onclick=()=>{
-  if(idleMode) continue;
+  if(idleMode) return;
   idleMode = true;
 
   document.getElementById('idleBtn').style.display='none';

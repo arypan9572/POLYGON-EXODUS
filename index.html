@@ -374,9 +374,36 @@ function spawnEnemy(){
   if(hardMode) speed *= 1.7;
   enemies.push({x,y,r,hp:1,speed});
 }
-  setInterval(() => {
-    if(!gamePaused && !dead && gameMode !== "menu") spawnEnemy();
-}, 800);
+
+function spawnEnemyType(type){
+  let x = Math.random()<0.5?-20:canvas.width+20;
+  let y = Math.random()*canvas.height;
+  let speed = 0.7 + difficulty*0.2;
+  if(hardMode) speed *= 1.7;
+
+  switch(type){
+    case "splitter":
+      enemies.push({x, y, r:12, hp:2, speed, type:"splitter", split:false});
+      break;
+    case "orbital":
+      enemies.push({x, y, r:10, hp:3, speed, type:"orbital", angle:0, orbitRadius:80, orbitSpeed:0.03});
+      break;
+    case "tank":
+      enemies.push({x, y, r:16, hp:4, speed: speed*0.5, type:"tank"});
+      break;
+    default: // normal
+      enemies.push({x, y, r:8, hp:1, speed, type:"normal"});
+  }
+}
+
+ setInterval(() => {
+  if(!gamePaused && !dead && gameMode !== "menu"){
+    const types = ["normal","splitter","orbital","tank"];
+    const type = types[Math.floor(Math.random()*types.length)];
+    spawnEnemyType(type);
+  }
+}, 900);
+
 
 setInterval(()=>{hUses=12;},60000);
 
@@ -448,6 +475,33 @@ function update(){
   enemies.forEach((e,i)=>{
     const dx=player.x-e.x, dy=player.y-e.y, d=Math.hypot(dx,dy)||1;
   const speedMult = slowMo ? 0.5 : 1;
+    switch(e.type){
+  case "splitter":
+    if(!e.split && Math.hypot(player.x-e.x, player.y-e.y) < 120){
+      // slow down near player
+      e.speed = 0.3;
+      e.split = true;
+    }
+    if(e.split && Math.hypot(player.x-e.x, player.y-e.y) < 40){
+      // split into 2 smaller circles
+      enemies.push({x:e.x+10, y:e.y, r:6, hp:1, speed:1, type:"normal"});
+      enemies.push({x:e.x-10, y:e.y, r:6, hp:1, speed:1, type:"normal"});
+      enemies.splice(i,1);
+    }
+    break;
+
+  case "orbital":
+    // orbit around player
+    e.angle += e.orbitSpeed;
+    e.x = player.x + Math.cos(e.angle) * e.orbitRadius;
+    e.y = player.y + Math.sin(e.angle) * e.orbitRadius;
+    break;
+
+  case "tank":
+    // tanks are slower; movement already handled by speedMult
+    break;
+}
+
 e.x += dx/d * e.speed * speedMult;
 e.y += dy/d * e.speed * speedMult;
 
@@ -658,7 +712,15 @@ ctx.shadowBlur = 6; // more visible through VHS
 
 
 
-  enemies.forEach(e=>{ ctx.fillStyle='red'; ctx.beginPath(); ctx.arc(e.x,e.y,e.r,0,Math.PI*2); ctx.fill(); });
+  enemies.forEach(e=>{ctx.beginPath();
+switch(e.type){
+  case "splitter": ctx.strokeStyle="#ff8800"; ctx.lineWidth=2; ctx.strokeRect(e.x-e.r, e.y-e.r, e.r*2, e.r*2); break;
+  case "orbital": ctx.fillStyle="#00ffff"; ctx.arc(e.x,e.y,e.r,0,Math.PI*2); ctx.fill(); break;
+  case "tank": ctx.fillStyle="#8800ff"; ctx.arc(e.x,e.y,e.r,0,Math.PI*2); ctx.fill(); break;
+  default: ctx.fillStyle='red'; ctx.arc(e.x,e.y,e.r,0,Math.PI*2); ctx.fill();
+}
+ctx.closePath();
+ });
   particles.forEach(p=>{ ctx.fillStyle=`rgba(255,0,0,${p.alpha})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill(); });
   drawDonut(ctx, performance.now(), canvas.width / 2, canvas.height / 2);
   drawBlueCube();

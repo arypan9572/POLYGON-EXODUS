@@ -989,6 +989,98 @@ window.addEventListener('keyup', e => {
   window.addEventListener('keyup', e => {     keys[e.key.toLowerCase()] = false; });
 window.addEventListener('keyup',e=>{ keys[e.key.toLowerCase()]=false; });
 
+/* ==== CATALOG ==== */
+const catalogItems = [
+  { id: 'rainbow', name: 'RAINBOW MODE', type: 'Power', description: 'Shoots rainbow bullets.', unlocked: false },
+  { id: 'blueCube', name: 'BLUE CUBE', type: 'Power', description: 'Special cube that chases you.', unlocked: false },
+  { id: 'orbital', name: 'ORBITAL ENEMY', type: 'Enemy', hp: 1, damage: 1, speed: 0.5, description: 'Orbits then homes in.', unlocked: false },
+  { id: 'splitter', name: 'SPLITTER ENEMY', type: 'Enemy', hp: 1, damage: 1, speed: 0.6, description: 'Splits into two children.', unlocked: false },
+  { id: 'tank', name: 'TANK ENEMY', type: 'Enemy', hp: 2, damage: 2, speed: 0.35, description: 'Big and slow.', unlocked: false }
+];
+
+let catalogIndex = 0;
+
+// Update unlocked items based on game progress
+function updateCatalogUnlocks(){
+  catalogItems.forEach(item=>{
+    if(item.id==='rainbow') item.unlocked = player.rainbow || item.unlocked;
+    if(item.id==='blueCube') item.unlocked = !!blueCube || item.unlocked;
+    if(item.id==='orbital') item.unlocked = enemies.some(e=>e.type==='orbital') || item.unlocked;
+    if(item.id==='splitter') item.unlocked = enemies.some(e=>e.type==='splitter') || item.unlocked;
+    if(item.id==='tank') item.unlocked = enemies.some(e=>e.type==='tank') || item.unlocked;
+  });
+}
+
+// Render catalog
+function renderCatalog(){
+  const container = document.getElementById('catalogContent');
+  const item = catalogItems[catalogIndex];
+  updateCatalogUnlocks();
+  
+  container.innerHTML = '';
+
+  if(item.unlocked){
+    const name = document.createElement('h2'); name.textContent = item.name; container.appendChild(name);
+    const type = document.createElement('p'); type.textContent = 'Type: ' + item.type; container.appendChild(type);
+    if(item.type==='Enemy'){
+      const stats = document.createElement('p'); stats.textContent = `HP: ${item.hp}, Damage: ${item.damage}, Speed: ${item.speed}`; container.appendChild(stats);
+    }
+    const desc = document.createElement('p'); desc.textContent = item.description; container.appendChild(desc);
+    const circle = document.createElement('div');
+    circle.style.width = '100px'; circle.style.height='100px'; circle.style.borderRadius='50%';
+    circle.style.margin='20px auto';
+    circle.style.background = item.type==='Power' ? 'linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet)' : '#888';
+    container.appendChild(circle);
+  } else {
+    // Locked: show shadow only
+    const locked = document.createElement('div');
+    locked.style.width='100px'; locked.style.height='100px'; locked.style.borderRadius='50%';
+    locked.style.margin='20px auto';
+    locked.style.background='#000';
+    locked.style.boxShadow='0 0 10px #555 inset';
+    container.appendChild(locked);
+    const name = document.createElement('h2'); name.textContent = '???'; container.appendChild(name);
+  }
+}
+
+// Show catalog
+document.getElementById('catalogBtn').addEventListener('click', ()=>{
+  document.getElementById('catalogPanel').style.display='block';
+  gamePaused = true;
+  renderCatalog();
+});
+
+// Close catalog
+document.getElementById('catalogCloseBtn').addEventListener('click', ()=>{
+  document.getElementById('catalogPanel').style.display='none';
+  gamePaused = false;
+});
+
+// Navigate catalog with buttons
+document.getElementById('catalogLeftBtn').addEventListener('click', ()=>{
+  catalogIndex = (catalogIndex - 1 + catalogItems.length) % catalogItems.length;
+  renderCatalog();
+});
+document.getElementById('catalogRightBtn').addEventListener('click', ()=>{
+  catalogIndex = (catalogIndex + 1) % catalogItems.length;
+  renderCatalog();
+});
+
+// Navigate catalog with A/D keys
+window.addEventListener('keydown', e=>{
+  if(document.getElementById('catalogPanel').style.display==='block'){
+    if(e.key.toLowerCase() === 'a'){
+      catalogIndex = (catalogIndex - 1 + catalogItems.length) % catalogItems.length;
+      renderCatalog();
+    }
+    if(e.key.toLowerCase() === 'd'){
+      catalogIndex = (catalogIndex + 1) % catalogItems.length;
+      renderCatalog();
+    }
+  }
+});
+
+
 /* ==== IDLE MODE ==== */
 
  function getIdleFireInterval(){

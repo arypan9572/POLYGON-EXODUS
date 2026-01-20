@@ -36,7 +36,18 @@ html,body{
 canvas { display:block; }
 
 /* UI */
-#ui { position: fixed; top:10px; right:10px; background: rgba(0,0,0,0.7); padding:12px; border-radius:10px; width:260px; font-size:14px; }
+#ui {
+  position: fixed;
+  top:10px;
+  right:10px;
+  background: rgba(0,0,0,0.7);
+  padding:12px;
+  border-radius:10px;
+  width:260px;
+  font-size:14px;
+  color: white; /* ← THIS IS THE FIX */
+}
+
 #leaderboard { margin-top:8px; max-height:180px; overflow-y:auto; font-size:13px; position:relative; }
 .lb-row { display:flex; justify-content:space-between; opacity:0.85; position:relative; animation: floatUpDown 2s infinite alternate; }
 @keyframes floatUpDown { 0%{top:0px;} 100%{top:4px;} }

@@ -14,7 +14,25 @@
 <link href="https://fonts.cdnfonts.com/css/sf-pro-display" rel="stylesheet">
 
 <style>
-html, body { margin:0; padding:0; background:#0b0b0b; color:#fff; font-family:'SF Pro', sans-serif; overflow:hidden; }
+
+@font-face {
+  font-family: "SFPro";
+  src: url("sf-pro-display-light.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+button, input {
+  font-family: "SFPro", sans-serif;
+}
+
+html,body{
+  margin:0;
+  padding:0;
+  background:#04060b;
+  overflow:hidden;
+  font-family:"SFPro", sans-serif;
+}
 canvas { display:block; }
 
 /* UI */
@@ -191,7 +209,7 @@ button:hover{opacity:0.85;}
 <div id="savePanel" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999;">
   <div style="width:420px;background:#111;border:2px solid #555;padding:14px;margin:10% auto;border-radius:10px;">
     <b>Save / Load Game</b>
-    <textarea id="saveText" style="width:100%;height:120px;margin-top:10px;background:#000;color:#0f0;font-family:monospace;resize:none;"></textarea>
+    <textarea id="saveText" style="width:100%;height:120px;margin-top:10px;background:#000;color:#0f0;font-family:inherit;resize:none;"></textarea>
     <button id="saveBtn">GENERATE SAVE</button>
     <button id="loadBtn">LOAD GAME</button>
     <button id="closeSave">CLOSE</button>

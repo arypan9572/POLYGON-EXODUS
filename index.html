@@ -797,15 +797,43 @@ function draw(){
  ctx.fillStyle = colorMode === "light" ? "#fff" : "#000"; // solid background
 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  if(bgImg.complete){ ctx.globalAlpha=0.25; bgObj.angle += 0.002;
+ // ==== PARALLAX BACKGROUND ====
+const parallax1 = 0.02; // far layer (slow)
+const parallax2 = 0.05; // closer layer (faster)
 
-ctx.save();
-ctx.translate(bgObj.x, bgObj.y);
-ctx.rotate(bgObj.angle);
-ctx.drawImage(bgImg, -bgObj.size/2, -bgObj.size/2, bgObj.size, bgObj.size);
-ctx.restore();
- ctx.globalAlpha=1; }
-  if(bgImg2.complete){ ctx.globalAlpha=0.25; ctx.drawImage(bgImg2,bgObj2.x-bgObj2.size/2,bgObj2.y-bgObj2.size/2,bgObj2.size,bgObj2.size); ctx.globalAlpha=1; }
+// Center offset based on player
+const offsetX1 = (player.x - canvas.width/2) * parallax1;
+const offsetY1 = (player.y - canvas.height/2) * parallax1;
+
+const offsetX2 = (player.x - canvas.width/2) * parallax2;
+const offsetY2 = (player.y - canvas.height/2) * parallax2;
+
+// Draw far background
+if(bgImg.complete){
+  ctx.globalAlpha = 0.25;
+  ctx.drawImage(
+    bgImg,
+    canvas.width/2 - bgObj.size/2 - offsetX1,
+    canvas.height/2 - bgObj.size/2 - offsetY1,
+    bgObj.size,
+    bgObj.size
+  );
+  ctx.globalAlpha = 1;
+}
+
+// Draw closer background
+if(bgImg2.complete){
+  ctx.globalAlpha = 0.25;
+  ctx.drawImage(
+    bgImg2,
+    canvas.width/2 - bgObj2.size/2 - offsetX2,
+    canvas.height/2 - bgObj2.size/2 - offsetY2,
+    bgObj2.size,
+    bgObj2.size
+  );
+  ctx.globalAlpha = 1;
+}
+
   drawPlayerShape();
 bullets.forEach(b => {
   // Decide bullet color based on rainbow power or mode

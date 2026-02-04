@@ -251,17 +251,12 @@ function playMenuMusicOnce() {
 window.addEventListener("click", playMenuMusicOnce, { once: true });
 
 
-/* ==== PARALLAX BACKGROUND ==== */
-const bgLayers = [
-  { img: new Image(), speed: 0.2, x: 0, y: 0 }, // far
-  { img: new Image(), speed: 0.5, x: 0, y: 0 }, // mid
-  { img: new Image(), speed: 1.0, x: 0, y: 0 }  // near
-];
-
-bgLayers[0].img.src = "bg.png";        // far layer
-bgLayers[1].img.src = "goonerola.png"; // mid layer
-bgLayers[2].img.src = "bg.png";        // near layer (reuse or add new image)
-
+/* ==== BACKGROUND ==== */
+const bgImg = new Image(); bgImg.src="bg.png";
+const bgImg2 = new Image(); bgImg2.src="goonerola.png";
+const bgObj={x:canvas.width/2,y:canvas.height/2,vx:(Math.random()*0.6+0.2)*(Math.random()<0.5?-1:1),vy:(Math.random()*0.6+0.2)*(Math.random()<0.5?-1:1),size:39,angle: 0,
+};
+const bgObj2={x:Math.random()*canvas.width,y:Math.random()*canvas.height,vx:(Math.random()*0.7+0.3)*(Math.random()<0.5?-1:1),vy:(Math.random()*0.7+0.3)*(Math.random()<0.5?-1:1),size:36};
 
 /* ==== PLAYER ==== */
 let player={x:canvas.width/2,y:canvas.height/2,r:18,angle:0,tokens:0,health:100,rainbow:false};
@@ -532,20 +527,6 @@ function update(){
 
   const now=performance.now();
   if(!idleMode){ if(keys.w)player.y-=4; if(keys.s)player.y+=4; if(keys.a)player.x-=4; if(keys.d)player.x+=4; }
-  // PARALLAX MOVE BACKGROUND
-if(keys.a){
-  bgLayers.forEach(l => l.x += l.speed * 2);
-}
-if(keys.d){
-  bgLayers.forEach(l => l.x -= l.speed * 2);
-}
-if(keys.w){
-  bgLayers.forEach(l => l.y += l.speed * 2);
-}
-if(keys.s){
-  bgLayers.forEach(l => l.y -= l.speed * 2);
-}
-
   else{ player.x+=(canvas.width/2-player.x)*0.05; player.y+=(canvas.height/2-player.y)*0.05; }
   player.angle+=0.08;
 
@@ -816,27 +797,6 @@ function draw(){
  ctx.fillStyle = colorMode === "light" ? "#fff" : "#000"; // solid background
 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-// DRAW PARALLAX BACKGROUND
-bgLayers.forEach(layer=>{
-  if(!layer.img.complete) return;
-
-  const w = canvas.width;
-  const h = canvas.height;
-
-  const x = layer.x % w;
-  const y = layer.y % h;
-
-  ctx.globalAlpha = 0.25;
-
-  ctx.drawImage(layer.img, x, y, w, h);
-  ctx.drawImage(layer.img, x - w, y, w, h);
-  ctx.drawImage(layer.img, x, y - h, w, h);
-  ctx.drawImage(layer.img, x - w, y - h, w, h);
-
-  ctx.globalAlpha = 1;
-});
-
-
  // ==== PARALLAX BACKGROUND ====
 const parallax1 = 0.02; // far layer (slow)
 const parallax2 = 0.05; // closer layer (faster)
@@ -849,7 +809,30 @@ const offsetX2 = (player.x - canvas.width/2) * parallax2;
 const offsetY2 = (player.y - canvas.height/2) * parallax2;
 
 // Draw far background
+if(bgImg.complete){
+  ctx.globalAlpha = 0.25;
+  ctx.drawImage(
+    bgImg,
+    canvas.width/2 - bgObj.size/2 - offsetX1,
+    canvas.height/2 - bgObj.size/2 - offsetY1,
+    bgObj.size,
+    bgObj.size
+  );
+  ctx.globalAlpha = 1;
+}
 
+// Draw closer background
+if(bgImg2.complete){
+  ctx.globalAlpha = 0.25;
+  ctx.drawImage(
+    bgImg2,
+    canvas.width/2 - bgObj2.size/2 - offsetX2,
+    canvas.height/2 - bgObj2.size/2 - offsetY2,
+    bgObj2.size,
+    bgObj2.size
+  );
+  ctx.globalAlpha = 1;
+}
 
   drawPlayerShape();
 bullets.forEach(b => {

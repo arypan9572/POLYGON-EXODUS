@@ -209,7 +209,7 @@ button:hover{opacity:0.85;}
 </div>
 
 <canvas id="transitionCanvas" style="position:fixed;inset:0;z-index:1500;pointer-events:none;display:none;"></canvas>
-<canvas id="game"></canvas>
+<canvas id="game" style="pointer-events:none;"></canvas>
 
 <div id="heartsUI"></div>
 
@@ -1086,6 +1086,61 @@ function renderCatalog(){
     const name = document.createElement('h2'); name.textContent = '???'; container.appendChild(name);
   }
 }
+// ==== MODE BUTTONS ====
+const classicBtn = document.getElementById("classicBtn");
+const arcadeBtn = document.getElementById("arcadeBtn");
+const startBtn = document.getElementById("startBtn");
+const hardBtn = document.getElementById("hardBtn");
+const survivorBtn = document.getElementById("survivorBtn");
+
+const modeSelect = document.getElementById("modeSelect");
+const classicOptions = document.getElementById("classicOptions");
+const arcadeOptions = document.getElementById("arcadeOptions");
+const settingsOptions = document.getElementById("settingsOptions");
+
+// Open Classic menu
+classicBtn.onclick = () => {
+  modeSelect.style.display = "none";
+  classicOptions.style.display = "block";
+};
+
+// Open Arcade menu
+arcadeBtn.onclick = () => {
+  modeSelect.style.display = "none";
+  arcadeOptions.style.display = "block";
+};
+
+// Start Classic mode
+startBtn.onclick = () => {
+  gameMode = "classic";
+  hardMode = false;
+  document.getElementById("titleScreen").style.display = "none";
+  gamePaused = false;
+  menuMusic.pause();
+  gameMusic.play();
+};
+
+// Start Hard mode
+hardBtn.onclick = () => {
+  gameMode = "classic";
+  hardMode = true;
+  document.getElementById("titleScreen").style.display = "none";
+  gamePaused = false;
+  menuMusic.pause();
+  gameMusic.play();
+};
+
+// Start Survivor mode
+survivorBtn.onclick = () => {
+  gameMode = "survivor";
+  hardMode = false;
+  hearts = 3;
+  renderHearts();
+  document.getElementById("titleScreen").style.display = "none";
+  gamePaused = false;
+  menuMusic.pause();
+  gameMusic.play();
+};
 
 // Show catalog
 document.getElementById('catalogBtn').addEventListener('click', ()=>{

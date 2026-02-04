@@ -178,9 +178,11 @@ button:hover{opacity:0.85;}
 <div id="catalogPanel" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:1000; color:white; font-family:'SF Pro',sans-serif; padding:40px; overflow:hidden;">
   <h1 style="text-align:center;">CATALOG</h1>
   <div id="catalogContent" style="text-align:center; font-size:18px; margin-top:20px;"></div>
-<div style="text-align:center; margin-top:40px;">
-  <button id="catalogCloseBtn">BACK</button>
-</div>
+  <div style="text-align:center; margin-top:40px;">
+    <button id="catalogLeftBtn" style="margin-right:50px;">A</button>
+    <button id="catalogRightBtn">D</button>
+    <button id="catalogCloseBtn" style="margin-left:50px;">BACK</button>
+  </div>
 </div>
 
 
@@ -209,7 +211,7 @@ button:hover{opacity:0.85;}
 </div>
 
 <canvas id="transitionCanvas" style="position:fixed;inset:0;z-index:1500;pointer-events:none;display:none;"></canvas>
-<canvas id="game" style="pointer-events:none;"></canvas>
+<canvas id="game"></canvas>
 
 <div id="heartsUI"></div>
 
@@ -255,11 +257,6 @@ const bgImg2 = new Image(); bgImg2.src="goonerola.png";
 const bgObj={x:canvas.width/2,y:canvas.height/2,vx:(Math.random()*0.6+0.2)*(Math.random()<0.5?-1:1),vy:(Math.random()*0.6+0.2)*(Math.random()<0.5?-1:1),size:39,angle: 0,
 };
 const bgObj2={x:Math.random()*canvas.width,y:Math.random()*canvas.height,vx:(Math.random()*0.7+0.3)*(Math.random()<0.5?-1:1),vy:(Math.random()*0.7+0.3)*(Math.random()<0.5?-1:1),size:36};
-
-// ==== PARALLAX ====
-let parallaxX = 0;
-let parallaxY = 0;
-const parallaxStrength = 0.05; // smaller = subtle, try 0.03–0.08
 
 /* ==== PLAYER ==== */
 let player={x:canvas.width/2,y:canvas.height/2,r:18,angle:0,tokens:0,health:100,rainbow:false};
@@ -530,13 +527,6 @@ function update(){
 
   const now=performance.now();
   if(!idleMode){ if(keys.w)player.y-=4; if(keys.s)player.y+=4; if(keys.a)player.x-=4; if(keys.d)player.x+=4; }
-  // ==== PARALLAX CALCULATION ====
-const centerX = canvas.width / 2;
-const centerY = canvas.height / 2;
-
-parallaxX = (player.x - centerX) * parallaxStrength;
-parallaxY = (player.y - centerY) * parallaxStrength;
-
   else{ player.x+=(canvas.width/2-player.x)*0.05; player.y+=(canvas.height/2-player.y)*0.05; }
   player.angle+=0.08;
 
@@ -713,7 +703,6 @@ if (gameMode === "survivor") {
 
   checkCircleMessage();
 }
-  
 
 /* ==== CIRCLE MESSAGE ==== */
 let circleMessageShown=false;
@@ -807,19 +796,15 @@ function draw(){
   ctx.translate(shakeX,shakeY); shakeAmount*=0.9;
  ctx.fillStyle = colorMode === "light" ? "#fff" : "#000"; // solid background
 ctx.fillRect(0, 0, canvas.width, canvas.height);
-if(bgImg.complete){
-  ctx.globalAlpha = 0.25;
-  bgObj.angle += 0.002;
 
-  ctx.save();
-  ctx.translate(bgObj.x - parallaxX, bgObj.y - parallaxY);
-  ctx.rotate(bgObj.angle);
-  ctx.drawImage(bgImg, -bgObj.size/2, -bgObj.size/2, bgObj.size, bgObj.size);
-  ctx.restore();
+  if(bgImg.complete){ ctx.globalAlpha=0.25; bgObj.angle += 0.002;
 
-  ctx.globalAlpha = 1;
-}
-
+ctx.save();
+ctx.translate(bgObj.x, bgObj.y);
+ctx.rotate(bgObj.angle);
+ctx.drawImage(bgImg, -bgObj.size/2, -bgObj.size/2, bgObj.size, bgObj.size);
+ctx.restore();
+ ctx.globalAlpha=1; }
   if(bgImg2.complete){ ctx.globalAlpha=0.25; ctx.drawImage(bgImg2,bgObj2.x-bgObj2.size/2,bgObj2.y-bgObj2.size/2,bgObj2.size,bgObj2.size); ctx.globalAlpha=1; }
   drawPlayerShape();
 bullets.forEach(b => {
@@ -1086,65 +1071,6 @@ function renderCatalog(){
     const name = document.createElement('h2'); name.textContent = '???'; container.appendChild(name);
   }
 }
-// ==== MODE BUTTONS ====
-const classicBtn = document.getElementById("classicBtn");
-const arcadeBtn = document.getElementById("arcadeBtn");
-const startBtn = document.getElementById("startBtn");
-const hardBtn = document.getElementById("hardBtn");
-const survivorBtn = document.getElementById("survivorBtn");
-
-const modeSelect = document.getElementById("modeSelect");
-const classicOptions = document.getElementById("classicOptions");
-const arcadeOptions = document.getElementById("arcadeOptions");
-const settingsOptions = document.getElementById("settingsOptions");
-
-// Open Classic menu
-classicBtn.onclick = () => {
-  modeSelect.style.display = "none";
-  classicOptions.style.display = "block";
-};
-
-// Open Arcade menu
-arcadeBtn.onclick = () => {
-  modeSelect.style.display = "none";
-  arcadeOptions.style.display = "block";
-};
-
-// Start Classic mode
-startBtn.onclick = () => {
-  gameMode = "classic";
-  hardMode = false;
-  gamePaused = false;
-
-  document.getElementById("titleScreen").style.display = "none";
-  menuMusic.pause();
-  gameMusic.play();
-};
-
-// Start Hard mode
-hardBtn.onclick = () => {
-  gameMode = "classic";
-  hardMode = true;
-  gamePaused = false;
-
-  document.getElementById("titleScreen").style.display = "none";
-  menuMusic.pause();
-  gameMusic.play();
-};
-
-// Start Survivor mode
-survivorBtn.onclick = () => {
-  gameMode = "survivor";
-  hardMode = false;
-  hearts = 3;
-  renderHearts();
-  gamePaused = false;
-
-  document.getElementById("titleScreen").style.display = "none";
-  menuMusic.pause();
-  gameMusic.play();
-};
-
 
 // Show catalog
 document.getElementById('catalogBtn').addEventListener('click', ()=>{
@@ -1157,6 +1083,16 @@ document.getElementById('catalogBtn').addEventListener('click', ()=>{
 document.getElementById('catalogCloseBtn').addEventListener('click', ()=>{
   document.getElementById('catalogPanel').style.display='none';
   gamePaused = false;
+});
+
+// Navigate catalog with buttons
+document.getElementById('catalogLeftBtn').addEventListener('click', ()=>{
+  catalogIndex = (catalogIndex - 1 + catalogItems.length) % catalogItems.length;
+  renderCatalog();
+});
+document.getElementById('catalogRightBtn').addEventListener('click', ()=>{
+  catalogIndex = (catalogIndex + 1) % catalogItems.length;
+  renderCatalog();
 });
 
 // Navigate catalog with A/D keys
@@ -1236,48 +1172,19 @@ document.getElementById("loadBtn").onclick=()=>{
 };
 
 /* ==== TITLE SCREEN PIXELATION TRANSITION ==== */
-const transitionCanvas = document.getElementById("transitionCanvas");
-const tCtx = transitionCanvas.getContext("2d");
-
-transitionCanvas.width = innerWidth;
-transitionCanvas.height = innerHeight;
-
-window.addEventListener('resize', () => {
-  transitionCanvas.width = innerWidth;
-  transitionCanvas.height = innerHeight;
-});
-
+const transitionCanvas=document.getElementById("transitionCanvas"); const tCtx=transitionCanvas.getContext("2d");
+transitionCanvas.width=innerWidth; transitionCanvas.height=innerHeight;
+window.addEventListener('resize',()=>{transitionCanvas.width=innerWidth; transitionCanvas.height=innerHeight;});
 function pixelateTransition(callback){
-  transitionCanvas.style.display = "block";
-
-  let pixelSize = 80;
-  let alpha = 1;
-
-  const interval = setInterval(() => {
-    tCtx.clearRect(0,0,transitionCanvas.width,transitionCanvas.height);
-
-    for(let y=0; y<transitionCanvas.height; y+=pixelSize){
-      for(let x=0; x<transitionCanvas.width; x+=pixelSize){
-        const shade = Math.floor(Math.random()*255);
-        tCtx.fillStyle = `rgba(${shade},${shade},${shade},${alpha})`;
-        tCtx.fillRect(x,y,pixelSize,pixelSize);
-      }
-    }
-
-    pixelSize -= 4;
-    alpha -= 0.03;
-
-    if(pixelSize <= 4){
-      clearInterval(interval);
-      tCtx.clearRect(0,0,transitionCanvas.width,transitionCanvas.height);
-      transitionCanvas.style.display = "none";
-      if(callback) callback();
-    }
-
-  }, 30);
-}
-
-
+  transitionCanvas.style.display="block";
+  const w=transitionCanvas.width,h=transitionCanvas.height;
+  tCtx.fillStyle="#0b0b0b"; tCtx.fillRect(0,0,w,h);
+  let source=tCtx.getImageData(0,0,w,h);
+  let start=null,duration=700,switched=false;
+  function drawPixels(block){
+    tCtx.clearRect(0,0,w,h);
+    for(let y=0;y<h;y+=block){ for(let x=0;x<w;x+=block){ const i=(y*w+x)*4; const r=source.data[i],g=source.data[i+1],b=source.data[i+2]; tCtx.fillStyle=`rgb(${r},${g},${b})`; tCtx.fillRect(x,y,block,block); } }
+  }
   function animate(ts){
     if(!start) start=ts; const t=(ts-start)/duration;
     const eased=t<0.5?2*t*t:1-Math.pow(-2*t+2,2)/2;

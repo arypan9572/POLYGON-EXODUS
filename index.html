@@ -178,11 +178,9 @@ button:hover{opacity:0.85;}
 <div id="catalogPanel" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:1000; color:white; font-family:'SF Pro',sans-serif; padding:40px; overflow:hidden;">
   <h1 style="text-align:center;">CATALOG</h1>
   <div id="catalogContent" style="text-align:center; font-size:18px; margin-top:20px;"></div>
-  <div style="text-align:center; margin-top:40px;">
-    <button id="catalogLeftBtn" style="margin-right:50px;">A</button>
-    <button id="catalogRightBtn">D</button>
-    <button id="catalogCloseBtn" style="margin-left:50px;">BACK</button>
-  </div>
+<div style="text-align:center; margin-top:40px;">
+  <button id="catalogCloseBtn">BACK</button>
+</div>
 </div>
 
 
@@ -1083,16 +1081,6 @@ document.getElementById('catalogBtn').addEventListener('click', ()=>{
 document.getElementById('catalogCloseBtn').addEventListener('click', ()=>{
   document.getElementById('catalogPanel').style.display='none';
   gamePaused = false;
-});
-
-// Navigate catalog with buttons
-document.getElementById('catalogLeftBtn').addEventListener('click', ()=>{
-  catalogIndex = (catalogIndex - 1 + catalogItems.length) % catalogItems.length;
-  renderCatalog();
-});
-document.getElementById('catalogRightBtn').addEventListener('click', ()=>{
-  catalogIndex = (catalogIndex + 1) % catalogItems.length;
-  renderCatalog();
 });
 
 // Navigate catalog with A/D keys

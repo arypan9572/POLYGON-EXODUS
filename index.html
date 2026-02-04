@@ -1202,6 +1202,44 @@ const classicOptions = document.getElementById("classicOptions");
 const arcadeOptions = document.getElementById("arcadeOptions");
   const settingsOptions = document.getElementById("settingsOptions");
 
+const classicBtn = document.getElementById("classicBtn");
+const arcadeBtn = document.getElementById("arcadeBtn");
+const startBtn = document.getElementById("startBtn");
+const hardBtn = document.getElementById("hardBtn");
+const settingsBtn = document.getElementById("settingsBtn");
+
+// OPEN CLASSIC MENU
+classicBtn.onclick = () => {
+  modeSelect.style.display = "none";
+  classicOptions.style.display = "block";
+};
+
+// OPEN ARCADE MENU
+arcadeBtn.onclick = () => {
+  modeSelect.style.display = "none";
+  arcadeOptions.style.display = "block";
+};
+
+// OPEN SETTINGS
+settingsBtn.onclick = () => {
+  modeSelect.style.display = "none";
+  settingsOptions.style.display = "block";
+};
+
+// START GAME (CLASSIC)
+startBtn.onclick = () => {
+  gameMode = "classic";
+  pixelateTransition();
+};
+
+// HARD MODE
+hardBtn.onclick = () => {
+  hardMode = true;
+  gameMode = "classic";
+  pixelateTransition();
+};
+
+
 const btnHoverSound = document.getElementById("btnHover");
 const btnClickSound = document.getElementById("btnClick");
 

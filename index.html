@@ -1236,22 +1236,47 @@ document.getElementById("loadBtn").onclick=()=>{
 };
 
 /* ==== TITLE SCREEN PIXELATION TRANSITION ==== */
-const transitionCanvas=document.getElementById("transitionCanvas"); const tCtx=transitionCanvas.getContext("2d");
-transitionCanvas.width=innerWidth; transitionCanvas.height=innerHeight;
-window.addEventListener('resize',()=>{transitionCanvas.width=innerWidth; transitionCanvas.height=innerHeight;});
+const transitionCanvas = document.getElementById("transitionCanvas");
+const tCtx = transitionCanvas.getContext("2d");
+
+transitionCanvas.width = innerWidth;
+transitionCanvas.height = innerHeight;
+
+window.addEventListener('resize', () => {
+  transitionCanvas.width = innerWidth;
+  transitionCanvas.height = innerHeight;
+});
+
 function pixelateTransition(callback){
-  transitionCanvas.style.display="block";
-  const w = transitionCanvas.width;
-  const h = transitionCanvas.height;
+  transitionCanvas.style.display = "block";
 
-  tCtx.fillStyle = "#0b0b0b";
-  tCtx.fillRect(0,0,w,h);
+  let pixelSize = 80;
+  let alpha = 1;
 
-  setTimeout(()=>{
-    transitionCanvas.style.display="none";
-    if(callback) callback();
-  }, 500);
+  const interval = setInterval(() => {
+    tCtx.clearRect(0,0,transitionCanvas.width,transitionCanvas.height);
+
+    for(let y=0; y<transitionCanvas.height; y+=pixelSize){
+      for(let x=0; x<transitionCanvas.width; x+=pixelSize){
+        const shade = Math.floor(Math.random()*255);
+        tCtx.fillStyle = `rgba(${shade},${shade},${shade},${alpha})`;
+        tCtx.fillRect(x,y,pixelSize,pixelSize);
+      }
+    }
+
+    pixelSize -= 4;
+    alpha -= 0.03;
+
+    if(pixelSize <= 4){
+      clearInterval(interval);
+      tCtx.clearRect(0,0,transitionCanvas.width,transitionCanvas.height);
+      transitionCanvas.style.display = "none";
+      if(callback) callback();
+    }
+
+  }, 30);
 }
+
 
   function animate(ts){
     if(!start) start=ts; const t=(ts-start)/duration;

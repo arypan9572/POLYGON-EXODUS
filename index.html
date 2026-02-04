@@ -256,6 +256,11 @@ const bgObj={x:canvas.width/2,y:canvas.height/2,vx:(Math.random()*0.6+0.2)*(Math
 };
 const bgObj2={x:Math.random()*canvas.width,y:Math.random()*canvas.height,vx:(Math.random()*0.7+0.3)*(Math.random()<0.5?-1:1),vy:(Math.random()*0.7+0.3)*(Math.random()<0.5?-1:1),size:36};
 
+// ==== PARALLAX ====
+let parallaxX = 0;
+let parallaxY = 0;
+const parallaxStrength = 0.05; // smaller = subtle, try 0.03–0.08
+
 /* ==== PLAYER ==== */
 let player={x:canvas.width/2,y:canvas.height/2,r:18,angle:0,tokens:0,health:100,rainbow:false};
 let currentShapeSides=3;
@@ -525,6 +530,13 @@ function update(){
 
   const now=performance.now();
   if(!idleMode){ if(keys.w)player.y-=4; if(keys.s)player.y+=4; if(keys.a)player.x-=4; if(keys.d)player.x+=4; }
+  // ==== PARALLAX CALCULATION ====
+const centerX = canvas.width / 2;
+const centerY = canvas.height / 2;
+
+parallaxX = (player.x - centerX) * parallaxStrength;
+parallaxY = (player.y - centerY) * parallaxStrength;
+
   else{ player.x+=(canvas.width/2-player.x)*0.05; player.y+=(canvas.height/2-player.y)*0.05; }
   player.angle+=0.08;
 
@@ -701,6 +713,7 @@ if (gameMode === "survivor") {
 
   checkCircleMessage();
 }
+  
 
 /* ==== CIRCLE MESSAGE ==== */
 let circleMessageShown=false;
@@ -794,15 +807,19 @@ function draw(){
   ctx.translate(shakeX,shakeY); shakeAmount*=0.9;
  ctx.fillStyle = colorMode === "light" ? "#fff" : "#000"; // solid background
 ctx.fillRect(0, 0, canvas.width, canvas.height);
+if(bgImg.complete){
+  ctx.globalAlpha = 0.25;
+  bgObj.angle += 0.002;
 
-  if(bgImg.complete){ ctx.globalAlpha=0.25; bgObj.angle += 0.002;
+  ctx.save();
+  ctx.translate(bgObj.x - parallaxX, bgObj.y - parallaxY);
+  ctx.rotate(bgObj.angle);
+  ctx.drawImage(bgImg, -bgObj.size/2, -bgObj.size/2, bgObj.size, bgObj.size);
+  ctx.restore();
 
-ctx.save();
-ctx.translate(bgObj.x, bgObj.y);
-ctx.rotate(bgObj.angle);
-ctx.drawImage(bgImg, -bgObj.size/2, -bgObj.size/2, bgObj.size, bgObj.size);
-ctx.restore();
- ctx.globalAlpha=1; }
+  ctx.globalAlpha = 1;
+}
+
   if(bgImg2.complete){ ctx.globalAlpha=0.25; ctx.drawImage(bgImg2,bgObj2.x-bgObj2.size/2,bgObj2.y-bgObj2.size/2,bgObj2.size,bgObj2.size); ctx.globalAlpha=1; }
   drawPlayerShape();
 bullets.forEach(b => {

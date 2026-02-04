@@ -1241,14 +1241,18 @@ transitionCanvas.width=innerWidth; transitionCanvas.height=innerHeight;
 window.addEventListener('resize',()=>{transitionCanvas.width=innerWidth; transitionCanvas.height=innerHeight;});
 function pixelateTransition(callback){
   transitionCanvas.style.display="block";
-  const w=transitionCanvas.width,h=transitionCanvas.height;
-  tCtx.fillStyle="#0b0b0b"; tCtx.fillRect(0,0,w,h);
-  let source=tCtx.getImageData(0,0,w,h);
-  let start=null,duration=700,switched=false;
-  function drawPixels(block){
-    tCtx.clearRect(0,0,w,h);
-    for(let y=0;y<h;y+=block){ for(let x=0;x<w;x+=block){ const i=(y*w+x)*4; const r=source.data[i],g=source.data[i+1],b=source.data[i+2]; tCtx.fillStyle=`rgb(${r},${g},${b})`; tCtx.fillRect(x,y,block,block); } }
-  }
+  const w = transitionCanvas.width;
+  const h = transitionCanvas.height;
+
+  tCtx.fillStyle = "#0b0b0b";
+  tCtx.fillRect(0,0,w,h);
+
+  setTimeout(()=>{
+    transitionCanvas.style.display="none";
+    if(callback) callback();
+  }, 500);
+}
+
   function animate(ts){
     if(!start) start=ts; const t=(ts-start)/duration;
     const eased=t<0.5?2*t*t:1-Math.pow(-2*t+2,2)/2;

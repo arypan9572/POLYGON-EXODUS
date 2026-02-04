@@ -1114,8 +1114,9 @@ arcadeBtn.onclick = () => {
 startBtn.onclick = () => {
   gameMode = "classic";
   hardMode = false;
-  document.getElementById("titleScreen").style.display = "none";
   gamePaused = false;
+
+  document.getElementById("titleScreen").style.display = "none";
   menuMusic.pause();
   gameMusic.play();
 };
@@ -1124,8 +1125,9 @@ startBtn.onclick = () => {
 hardBtn.onclick = () => {
   gameMode = "classic";
   hardMode = true;
-  document.getElementById("titleScreen").style.display = "none";
   gamePaused = false;
+
+  document.getElementById("titleScreen").style.display = "none";
   menuMusic.pause();
   gameMusic.play();
 };
@@ -1136,11 +1138,13 @@ survivorBtn.onclick = () => {
   hardMode = false;
   hearts = 3;
   renderHearts();
-  document.getElementById("titleScreen").style.display = "none";
   gamePaused = false;
+
+  document.getElementById("titleScreen").style.display = "none";
   menuMusic.pause();
   gameMusic.play();
 };
+
 
 // Show catalog
 document.getElementById('catalogBtn').addEventListener('click', ()=>{

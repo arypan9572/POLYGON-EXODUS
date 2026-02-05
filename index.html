@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -93,14 +94,6 @@ button:hover{opacity:0.85;}
   opacity: 0;
   animation: fadeInMoveBtn 2s 0.5s forwards, floatBtn 3s ease-in-out infinite alternate;
 }
-#gameWrapper{
-  position: fixed;
-  inset: 0;
-  transform-style: preserve-3d;
-  will-change: transform;
-  transition: transform 0.05s linear;
-}
-
 @keyframes fadeInMoveLogo { 0% { opacity:0; transform:translateY(50px); } 100% { opacity:1; transform:translateY(0); } }
 @keyframes fadeInMoveBtn { 0% { opacity:0; transform:translateY(60px); } 100% { opacity:1; transform:translateY(0); } }
 @keyframes floatLogo { 0% { transform:translateY(0); } 100% { transform:translateY(20px); } }
@@ -219,9 +212,7 @@ button:hover{opacity:0.85;}
 </div>
 
 <canvas id="transitionCanvas" style="position:fixed;inset:0;z-index:1500;pointer-events:none;display:none;"></canvas>
-<div id="gameWrapper">
-  <canvas id="game"></canvas>
-</div>
+<canvas id="game"></canvas>
 
 <div id="heartsUI"></div>
 
@@ -240,41 +231,6 @@ button:hover{opacity:0.85;}
 <script>
 /* ==== SETUP ==== */
 const canvas = document.getElementById('game');
-const gameWrapper = document.getElementById("gameWrapper");
-
-let parallaxEnabled = false;
-
-let targetRX = 0, targetRY = 0;
-let currentRX = 0, currentRY = 0;
-
-const PARALLAX_STRENGTH = 6; // tilt amount
-const PARALLAX_SMOOTH = 0.08;
-
-window.addEventListener("mousemove", e => {
-  if(!parallaxEnabled) return;
-
-  const x = (e.clientX / window.innerWidth) * 2 - 1;
-  const y = (e.clientY / window.innerHeight) * 2 - 1;
-
-  targetRY = x * PARALLAX_STRENGTH;
-  targetRX = -y * PARALLAX_STRENGTH;
-});
-
-function updateParallax(){
-  currentRX += (targetRX - currentRX) * PARALLAX_SMOOTH;
-  currentRY += (targetRY - currentRY) * PARALLAX_SMOOTH;
-
-  if(parallaxEnabled){
-    gameWrapper.style.transform =
-      `perspective(900px) rotateX(${currentRX}deg) rotateY(${currentRY}deg)`;
-  } else {
-    gameWrapper.style.transform = "none";
-  }
-
-  requestAnimationFrame(updateParallax);
-}
-updateParallax();
-
 const ctx = canvas.getContext('2d');
 canvas.width = innerWidth; canvas.height = innerHeight;
 window.addEventListener('resize',()=>{ canvas.width=innerWidth; canvas.height=innerHeight; });
@@ -299,9 +255,9 @@ window.addEventListener("click", playMenuMusicOnce, { once: true });
 /* ==== BACKGROUND ==== */
 const bgImg = new Image(); bgImg.src="bg.png";
 const bgImg2 = new Image(); bgImg2.src="goonerola.png";
-const bgObj={x:canvas.width/2,y:canvas.height/2,vx:(Math.random()*0.6+0.2)*(Math.random()<0.5?-1:1),vy:(Math.random()*0.6+0.2)*(Math.random()<0.5?-1:1),size:7,angle: 0,
+const bgObj={x:canvas.width/2,y:canvas.height/2,vx:(Math.random()*0.6+0.2)*(Math.random()<0.5?-1:1),vy:(Math.random()*0.6+0.2)*(Math.random()<0.5?-1:1),size:39,angle: 0,
 };
-const bgObj2={x:Math.random()*canvas.width,y:Math.random()*canvas.height,vx:(Math.random()*0.7+0.3)*(Math.random()<0.5?-1:1),vy:(Math.random()*0.7+0.3)*(Math.random()<0.5?-1:1),size:7};
+const bgObj2={x:Math.random()*canvas.width,y:Math.random()*canvas.height,vx:(Math.random()*0.7+0.3)*(Math.random()<0.5?-1:1),vy:(Math.random()*0.7+0.3)*(Math.random()<0.5?-1:1),size:36};
 
 /* ==== PLAYER ==== */
 let player={x:canvas.width/2,y:canvas.height/2,r:18,angle:0,tokens:0,health:100,rainbow:false};
@@ -770,7 +726,6 @@ function checkCircleMessage(){
 function triggerDeathScreen(){
   dead = true;
   gamePaused = true;
-  parallaxEnabled = false;
   deathStartTime = performance.now();
 
   // SHOW BACK BUTTON ONLY FOR SURVIVOR MODE
@@ -843,42 +798,42 @@ function draw(){
  ctx.fillStyle = colorMode === "light" ? "#fff" : "#000"; // solid background
 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-// ===== STRONG PARALLAX BACKGROUND (FIXED SIZE) =====
-const centerX = canvas.width / 2;
-const centerY = canvas.height / 2;
+ // ==== PARALLAX BACKGROUND ====
+const parallax1 = 0.02; // far layer (slow)
+const parallax2 = 0.05; // closer layer (faster)
 
-const depthX = (player.x - centerX) / centerX;
-const depthY = (player.y - centerY) / centerY;
+// Center offset based on player
+const offsetX1 = (player.x - canvas.width/2) * parallax1;
+const offsetY1 = (player.y - canvas.height/2) * parallax1;
 
-// MUCH STRONGER depth
-const farX = -depthX * 40;
-const farY = -depthY * 40;
+const offsetX2 = (player.x - canvas.width/2) * parallax2;
+const offsetY2 = (player.y - canvas.height/2) * parallax2;
 
-const nearX = -depthX * 90;
-const nearY = -depthY * 90;
-
-// draw at NATURAL image size, centered
+// Draw far background
 if(bgImg.complete){
-  ctx.globalAlpha = 0.35;
+  ctx.globalAlpha = 0.25;
   ctx.drawImage(
     bgImg,
-    canvas.width/2 - bgImg.width/2 + farX,
-    canvas.height/2 - bgImg.height/2 + farY
+    canvas.width/2 - bgObj.size/2 - offsetX1,
+    canvas.height/2 - bgObj.size/2 - offsetY1,
+    bgObj.size,
+    bgObj.size
   );
   ctx.globalAlpha = 1;
 }
 
+// Draw closer background
 if(bgImg2.complete){
-  ctx.globalAlpha = 0.5;
+  ctx.globalAlpha = 0.25;
   ctx.drawImage(
     bgImg2,
-    canvas.width/2 - bgImg2.width/2 + nearX,
-    canvas.height/2 - bgImg2.height/2 + nearY
+    canvas.width/2 - bgObj2.size/2 - offsetX2,
+    canvas.height/2 - bgObj2.size/2 - offsetY2,
+    bgObj2.size,
+    bgObj2.size
   );
   ctx.globalAlpha = 1;
 }
-
-
 
   drawPlayerShape();
 bullets.forEach(b => {
@@ -905,10 +860,7 @@ ctx.shadowBlur = 6; // more visible through VHS
   enemies.forEach(e=>{
 ctx.save();
 ctx.translate(e.x, e.y);
-const centerX = canvas.width / 2;
-const depthX = (player.x - centerX) / centerX;
-
-ctx.rotate(e.orbitAngle + depthX * 0.5);
+ctx.rotate(player.angle); // make enemy rotate like player
 
 // Add glow for enemy
 let glowColor;
@@ -1021,12 +973,7 @@ ctx.fillText(
 /* ==== DRAW PLAYER ==== */
 function drawPlayerShape(){
   const s=currentShapeSides;
-  ctx.save(); ctx.translate(player.x,player.y); 
-  const centerX = canvas.width / 2;
-const depthX = (player.x - centerX) / centerX;
-
-ctx.rotate(player.angle + depthX * 0.5);
- ctx.fillStyle=player.rainbow?`hsl(${Date.now()%360},100%,50%)`:'#4caf50'; ctx.beginPath();
+  ctx.save(); ctx.translate(player.x,player.y); ctx.rotate(player.angle); ctx.fillStyle=player.rainbow?`hsl(${Date.now()%360},100%,50%)`:'#4caf50'; ctx.beginPath();
   if([3,4,5,6,7,8,9,10].includes(s)){ for(let i=0;i<s;i++){ const a=i*Math.PI*2/s-Math.PI/2; ctx.lineTo(Math.cos(a)*player.r,Math.sin(a)*player.r); } ctx.closePath(); } 
   else if(s===100){ctx.arc(0,0,player.r,0,Math.PI*2);} 
   else if(s===2){ctx.moveTo(-player.r,0); ctx.quadraticCurveTo(0,-player.r,player.r,0); ctx.quadraticCurveTo(0,player.r,-player.r,0); ctx.closePath();}
@@ -1158,7 +1105,6 @@ function renderCatalog(){
 document.getElementById('catalogBtn').addEventListener('click', ()=>{
   document.getElementById('catalogPanel').style.display='block';
   gamePaused = true;
-  parallaxEnabled = false;
   renderCatalog();
 });
 
@@ -1312,7 +1258,6 @@ settingsBtn.onclick = () => {
 // START GAME (CLASSIC)
 startBtn.onclick = () => {
   gameMode = "classic";
-  parallaxEnabled = true;
   pixelateTransition();
 };
 

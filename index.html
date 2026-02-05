@@ -843,16 +843,29 @@ function draw(){
  ctx.fillStyle = colorMode === "light" ? "#fff" : "#000"; // solid background
 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
- // ==== PARALLAX BACKGROUND ====
-const parallax1 = 0.02; // far layer (slow)
-const parallax2 = 0.05; // closer layer (faster)
+// ==== DEPTH PARALLAX (3D illusion) ====
+const centerX = canvas.width / 2;
+const centerY = canvas.height / 2;
 
-// Center offset based on player
-const offsetX1 = (player.x - canvas.width/2) * parallax1;
-const offsetY1 = (player.y - canvas.height/2) * parallax1;
+const depthX = (player.x - centerX) / centerX;
+const depthY = (player.y - centerY) / centerY;
 
-const offsetX2 = (player.x - canvas.width/2) * parallax2;
-const offsetY2 = (player.y - canvas.height/2) * parallax2;
+// background sinks back
+const bgOffsetX = -depthX * 10;
+const bgOffsetY = -depthY * 10;
+
+// mid layer
+const midOffsetX = -depthX * 25;
+const midOffsetY = -depthY * 25;
+
+// foreground pops forward
+const fgOffsetX = -depthX * 45;
+const fgOffsetY = -depthY * 45;
+
+// draw layers
+ctx.drawImage(bgImage, bgOffsetX, bgOffsetY, canvas.width+50, canvas.height+50);
+ctx.drawImage(midImage, midOffsetX, midOffsetY, canvas.width+50, canvas.height+50);
+ctx.drawImage(fgImage, fgOffsetX, fgOffsetY, canvas.width+50, canvas.height+50);
 
 // Draw far background
 if(bgImg.complete){

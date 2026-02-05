@@ -93,6 +93,14 @@ button:hover{opacity:0.85;}
   opacity: 0;
   animation: fadeInMoveBtn 2s 0.5s forwards, floatBtn 3s ease-in-out infinite alternate;
 }
+#gameWrapper{
+  position: fixed;
+  inset: 0;
+  transform-style: preserve-3d;
+  will-change: transform;
+  transition: transform 0.05s linear;
+}
+
 @keyframes fadeInMoveLogo { 0% { opacity:0; transform:translateY(50px); } 100% { opacity:1; transform:translateY(0); } }
 @keyframes fadeInMoveBtn { 0% { opacity:0; transform:translateY(60px); } 100% { opacity:1; transform:translateY(0); } }
 @keyframes floatLogo { 0% { transform:translateY(0); } 100% { transform:translateY(20px); } }
@@ -211,7 +219,9 @@ button:hover{opacity:0.85;}
 </div>
 
 <canvas id="transitionCanvas" style="position:fixed;inset:0;z-index:1500;pointer-events:none;display:none;"></canvas>
-<canvas id="game"></canvas>
+<div id="gameWrapper">
+  <canvas id="game"></canvas>
+</div>
 
 <div id="heartsUI"></div>
 
@@ -230,6 +240,41 @@ button:hover{opacity:0.85;}
 <script>
 /* ==== SETUP ==== */
 const canvas = document.getElementById('game');
+const gameWrapper = document.getElementById("gameWrapper");
+
+let parallaxEnabled = false;
+
+let targetRX = 0, targetRY = 0;
+let currentRX = 0, currentRY = 0;
+
+const PARALLAX_STRENGTH = 6; // tilt amount
+const PARALLAX_SMOOTH = 0.08;
+
+window.addEventListener("mousemove", e => {
+  if(!parallaxEnabled) return;
+
+  const x = (e.clientX / window.innerWidth) * 2 - 1;
+  const y = (e.clientY / window.innerHeight) * 2 - 1;
+
+  targetRY = x * PARALLAX_STRENGTH;
+  targetRX = -y * PARALLAX_STRENGTH;
+});
+
+function updateParallax(){
+  currentRX += (targetRX - currentRX) * PARALLAX_SMOOTH;
+  currentRY += (targetRY - currentRY) * PARALLAX_SMOOTH;
+
+  if(parallaxEnabled){
+    gameWrapper.style.transform =
+      `perspective(900px) rotateX(${currentRX}deg) rotateY(${currentRY}deg)`;
+  } else {
+    gameWrapper.style.transform = "none";
+  }
+
+  requestAnimationFrame(updateParallax);
+}
+updateParallax();
+
 const ctx = canvas.getContext('2d');
 canvas.width = innerWidth; canvas.height = innerHeight;
 window.addEventListener('resize',()=>{ canvas.width=innerWidth; canvas.height=innerHeight; });
@@ -725,6 +770,7 @@ function checkCircleMessage(){
 function triggerDeathScreen(){
   dead = true;
   gamePaused = true;
+  parallaxEnabled = false;
   deathStartTime = performance.now();
 
   // SHOW BACK BUTTON ONLY FOR SURVIVOR MODE
@@ -1104,6 +1150,7 @@ function renderCatalog(){
 document.getElementById('catalogBtn').addEventListener('click', ()=>{
   document.getElementById('catalogPanel').style.display='block';
   gamePaused = true;
+  parallaxEnabled = false;
   renderCatalog();
 });
 
@@ -1257,6 +1304,7 @@ settingsBtn.onclick = () => {
 // START GAME (CLASSIC)
 startBtn.onclick = () => {
   gameMode = "classic";
+  parallaxEnabled = true;
   pixelateTransition();
 };
 

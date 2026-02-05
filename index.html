@@ -843,44 +843,41 @@ function draw(){
  ctx.fillStyle = colorMode === "light" ? "#fff" : "#000"; // solid background
 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-// ===== PARALLAX BACKGROUND (DUMMY SAFE) =====
+// ===== STRONG PARALLAX BACKGROUND (FIXED SIZE) =====
 const centerX = canvas.width / 2;
 const centerY = canvas.height / 2;
 
 const depthX = (player.x - centerX) / centerX;
 const depthY = (player.y - centerY) / centerY;
 
-// far layer (goes BACK)
-const farX = -depthX * 10;
-const farY = -depthY * 10;
+// MUCH STRONGER depth
+const farX = -depthX * 40;
+const farY = -depthY * 40;
 
-// near layer (comes FORWARD)
-const nearX = -depthX * 30;
-const nearY = -depthY * 30;
+const nearX = -depthX * 90;
+const nearY = -depthY * 90;
 
+// draw at NATURAL image size, centered
 if(bgImg.complete){
-  ctx.globalAlpha = 0.25;
+  ctx.globalAlpha = 0.35;
   ctx.drawImage(
     bgImg,
-    farX,
-    farY,
-    canvas.width + 50,
-    canvas.height + 50
+    canvas.width/2 - bgImg.width/2 + farX,
+    canvas.height/2 - bgImg.height/2 + farY
   );
   ctx.globalAlpha = 1;
 }
 
 if(bgImg2.complete){
-  ctx.globalAlpha = 0.25;
+  ctx.globalAlpha = 0.5;
   ctx.drawImage(
     bgImg2,
-    nearX,
-    nearY,
-    canvas.width + 50,
-    canvas.height + 50
+    canvas.width/2 - bgImg2.width/2 + nearX,
+    canvas.height/2 - bgImg2.height/2 + nearY
   );
   ctx.globalAlpha = 1;
 }
+
 
 
   drawPlayerShape();

@@ -843,55 +843,45 @@ function draw(){
  ctx.fillStyle = colorMode === "light" ? "#fff" : "#000"; // solid background
 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-// ==== DEPTH PARALLAX (3D illusion) ====
+// ===== PARALLAX BACKGROUND (DUMMY SAFE) =====
 const centerX = canvas.width / 2;
 const centerY = canvas.height / 2;
 
 const depthX = (player.x - centerX) / centerX;
 const depthY = (player.y - centerY) / centerY;
 
-// background sinks back
-const bgOffsetX = -depthX * 10;
-const bgOffsetY = -depthY * 10;
+// far layer (goes BACK)
+const farX = -depthX * 10;
+const farY = -depthY * 10;
 
-// mid layer
-const midOffsetX = -depthX * 25;
-const midOffsetY = -depthY * 25;
+// near layer (comes FORWARD)
+const nearX = -depthX * 30;
+const nearY = -depthY * 30;
 
-// foreground pops forward
-const fgOffsetX = -depthX * 45;
-const fgOffsetY = -depthY * 45;
-
-// draw layers
-ctx.drawImage(bgImage, bgOffsetX, bgOffsetY, canvas.width+50, canvas.height+50);
-ctx.drawImage(midImage, midOffsetX, midOffsetY, canvas.width+50, canvas.height+50);
-ctx.drawImage(fgImage, fgOffsetX, fgOffsetY, canvas.width+50, canvas.height+50);
-
-// Draw far background
 if(bgImg.complete){
   ctx.globalAlpha = 0.25;
   ctx.drawImage(
     bgImg,
-    canvas.width/2 - bgObj.size/2 - offsetX1,
-    canvas.height/2 - bgObj.size/2 - offsetY1,
-    bgObj.size,
-    bgObj.size
+    farX,
+    farY,
+    canvas.width + 50,
+    canvas.height + 50
   );
   ctx.globalAlpha = 1;
 }
 
-// Draw closer background
 if(bgImg2.complete){
   ctx.globalAlpha = 0.25;
   ctx.drawImage(
     bgImg2,
-    canvas.width/2 - bgObj2.size/2 - offsetX2,
-    canvas.height/2 - bgObj2.size/2 - offsetY2,
-    bgObj2.size,
-    bgObj2.size
+    nearX,
+    nearY,
+    canvas.width + 50,
+    canvas.height + 50
   );
   ctx.globalAlpha = 1;
 }
+
 
   drawPlayerShape();
 bullets.forEach(b => {
@@ -918,7 +908,10 @@ ctx.shadowBlur = 6; // more visible through VHS
   enemies.forEach(e=>{
 ctx.save();
 ctx.translate(e.x, e.y);
-ctx.rotate(player.angle); // make enemy rotate like player
+const centerX = canvas.width / 2;
+const depthX = (player.x - centerX) / centerX;
+
+ctx.rotate(e.orbitAngle + depthX * 0.5);
 
 // Add glow for enemy
 let glowColor;
@@ -1031,7 +1024,12 @@ ctx.fillText(
 /* ==== DRAW PLAYER ==== */
 function drawPlayerShape(){
   const s=currentShapeSides;
-  ctx.save(); ctx.translate(player.x,player.y); ctx.rotate(player.angle); ctx.fillStyle=player.rainbow?`hsl(${Date.now()%360},100%,50%)`:'#4caf50'; ctx.beginPath();
+  ctx.save(); ctx.translate(player.x,player.y); 
+  const centerX = canvas.width / 2;
+const depthX = (player.x - centerX) / centerX;
+
+ctx.rotate(player.angle + depthX * 0.5);
+ ctx.fillStyle=player.rainbow?`hsl(${Date.now()%360},100%,50%)`:'#4caf50'; ctx.beginPath();
   if([3,4,5,6,7,8,9,10].includes(s)){ for(let i=0;i<s;i++){ const a=i*Math.PI*2/s-Math.PI/2; ctx.lineTo(Math.cos(a)*player.r,Math.sin(a)*player.r); } ctx.closePath(); } 
   else if(s===100){ctx.arc(0,0,player.r,0,Math.PI*2);} 
   else if(s===2){ctx.moveTo(-player.r,0); ctx.quadraticCurveTo(0,-player.r,player.r,0); ctx.quadraticCurveTo(0,player.r,-player.r,0); ctx.closePath();}
